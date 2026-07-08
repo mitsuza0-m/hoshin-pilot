@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoshin — 日報一覧（経営者）</title>
+<style>
+  :root {
+    --ink:       #1e1c18;
+    --ink-2:     #4a4740;
+    --ink-3:     #8a877e;
+    --ink-4:     #c4c1b8;
+    --bg:        #f7f5f0;
+    --surface:   #ffffff;
+    --border:    #e4e1d8;
+    --accent:    #2d5a3d;
+    --accent-lt: #e8f1eb;
+    --accent-md: #4a8c60;
+    --warn:      #b85c1a;
+    --warn-lt:   #fdf0e6;
+    --danger:    #b83232;
+    --danger-lt: #fdeaea;
+    --purple:    #3d3591;
+    --purple-lt: #eeedfe;
+    --gold:      #8a6a1a;
+    --gold-lt:   #fdf6e3;
+    --radius:    10px;
+    --radius-sm: 6px;
+    --shadow:    0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── ナビゲーション ── */
+  .nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--accent);
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .nav-logo svg { width: 22px; height: 22px; }
+  .nav-links {
+    display: flex;
+    gap: 2px;
+    flex: 1;
+  }
+  .nav-link {
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .nav-link:hover { background: var(--bg); }
+  .nav-link.active {
+    background: var(--accent-lt);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .nav-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .nav-bell {
+    position: relative;
+    cursor: pointer;
+    color: var(--ink-3);
+    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: background .15s;
+  }
+  .nav-bell:hover { background: var(--bg); }
+  .bell-dot {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 8px; height: 8px;
+    background: var(--danger);
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+  }
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+  }
+  .hamburger span {
+    display: block;
+    width: 20px; height: 2px;
+    background: var(--ink-2);
+    border-radius: 2px;
+  }
+
+  /* ── レイアウト ── */
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  .page-header {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .page-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .page-header p { font-size: 13px; color: var(--ink-3); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  /* ── KPIグリッド ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .kpi-label { font-size: 11px; color: var(--ink-3); margin-bottom: 6px; line-height: 1.4; }
+  .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1; margin-bottom: 5px; }
+  .kpi-sub { font-size: 11px; display: flex; align-items: center; gap: 3px; }
+  .kpi-up { color: var(--accent-md); }
+  .kpi-down { color: var(--danger); }
+  .kpi-neutral { color: var(--ink-3); }
+
+  /* ── フィルターバー ── */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .filter-tabs {
+    display: flex;
+    gap: 3px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px;
+    box-shadow: var(--shadow);
+  }
+  .filter-tab {
+    padding: 7px 13px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-3);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background .15s, color .15s;
+  }
+  .filter-tab.active { background: var(--accent-lt); color: var(--accent); }
+  .filter-spacer { flex: 1; }
+  .filter-select, .filter-search {
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  .filter-search { width: 180px; }
+  .filter-search::placeholder { color: var(--ink-4); }
+
+  /* ── 日報リスト ── */
+  .report-list { display: flex; flex-direction: column; }
+  .report-item {
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .report-item:last-child { border-bottom: none; }
+  .report-item:hover { background: var(--bg); }
+  .report-item.hidden { display: none; }
+  .report-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .report-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .av-green { background: var(--accent-lt); color: var(--accent); }
+  .av-gold  { background: var(--gold-lt);  color: var(--gold); }
+  .av-purple{ background: var(--purple-lt); color: var(--purple); }
+  .av-red   { background: var(--danger-lt); color: var(--danger); }
+  /* HoshinTeam の avatarClass（テーマ非依存の名前）をこのページの配色に割り当てる */
+  .member-tanaka   { background: var(--accent-lt); color: var(--accent); }
+  .member-suzuki   { background: var(--gold-lt);  color: var(--gold); }
+  .member-yamamoto { background: var(--purple-lt); color: var(--purple); }
+  .member-sato     { background: var(--danger-lt); color: var(--danger); }
+  .report-name { font-size: 13px; font-weight: 600; }
+  .report-dept { font-size: 11px; color: var(--ink-3); }
+  .report-date { font-size: 11px; color: var(--ink-4); margin-left: auto; }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--accent-lt);
+    color: var(--accent);
+    font-weight: 500;
+    margin-right: 4px;
+  }
+  .report-body {
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.6;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    margin-bottom: 6px;
+  }
+  .ai-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .ai-match { background: var(--accent-lt); color: var(--accent); }
+  .ai-check { background: var(--warn-lt); color: var(--warn); }
+  .comment-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .badge-uncommented { background: var(--warn-lt); color: var(--warn); }
+  .badge-commented   { background: var(--bg); color: var(--ink-3); }
+
+  .empty-state {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+
+  /* ── トースト ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--ink);
+    color: #fff;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── モバイルナビ ── */
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+  .mobile-nav-inner { display: flex; justify-content: space-around; }
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--ink-3);
+    font-size: 10px;
+    border: none;
+    background: none;
+  }
+  .mobile-nav-btn.active { color: var(--accent); }
+  .mobile-nav-btn svg { width: 22px; height: 22px; }
+
+  /* ── レスポンシブ ── */
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .page { padding: 16px 16px 80px; }
+    .page-header h1 { font-size: 19px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .kpi-value { font-size: 22px; }
+    .filter-search { width: 130px; }
+    .mobile-nav { display: block; }
+  }
+</style>
+<script src="gate.js"></script>
+</head>
+<body>
+
+<!-- ナビゲーション -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="location.href='02_owner_home.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Hoshin
+    </div>
+    <div class="nav-links">
+      <div class="nav-link" onclick="location.href='02_owner_home.html'">ホーム</div>
+      <div class="nav-link" onclick="location.href='03_policy_editor.html'">指針書</div>
+      <div class="nav-link active">日報一覧</div>
+      <div class="nav-link" onclick="toast('レポートページへ移動します')">レポート</div>
+      <div class="nav-link" onclick="toast('メンバー管理ページへ移動します')">メンバー管理</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-bell" onclick="toast('通知はありません')">
+        🔔<div class="bell-dot"></div>
+      </div>
+      <div class="nav-avatar" onclick="toast('プロフィール設定')">山</div>
+    </div>
+    <div class="hamburger" onclick="toast('メニューを開きます')">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- メインコンテンツ -->
+<main class="page">
+
+  <!-- ページヘッダー -->
+  <div class="page-header">
+    <div>
+      <h1>日報一覧</h1>
+      <p>全社員の日報をまとめて確認できます</p>
+    </div>
+  </div>
+
+  <!-- KPIカード -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">今月の日報提出率</div>
+      <div class="kpi-value" style="color:var(--accent)">78%</div>
+      <div class="kpi-sub kpi-up">↑ 先月より +3%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">本日の提出</div>
+      <div class="kpi-value">28<span style="font-size:14px;color:var(--ink-3);font-weight:500"> / 42名</span></div>
+      <div class="kpi-sub kpi-neutral">14名が未提出</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">返信が必要なコメント</div>
+      <div class="kpi-value" style="color:var(--danger)">12件</div>
+      <div class="kpi-sub kpi-down">↓ 早めの対応を</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">指針が伝わっている度合い</div>
+      <div class="kpi-value">62%</div>
+      <div class="kpi-sub kpi-neutral">目標 80%</div>
+    </div>
+  </div>
+
+  <!-- フィルターバー -->
+  <div class="filter-bar">
+    <div class="filter-tabs">
+      <button class="filter-tab active" data-filter="all" onclick="HoshinReportList.setFilter('all', this)">すべて</button>
+      <button class="filter-tab" data-filter="uncommented" onclick="HoshinReportList.setFilter('uncommented', this)">未コメント</button>
+      <button class="filter-tab" data-filter="commented" onclick="HoshinReportList.setFilter('commented', this)">コメント済み</button>
+      <button class="filter-tab" data-filter="check" onclick="HoshinReportList.setFilter('check', this)">要確認</button>
+    </div>
+    <select class="filter-select" id="dept-select" onchange="HoshinReportList.render()">
+      <option value="all">全部門</option>
+      <option value="営業部">営業部</option>
+      <option value="開発部">開発部</option>
+      <option value="管理部">管理部</option>
+    </select>
+    <div class="filter-spacer"></div>
+    <input type="text" class="filter-search" id="search-input" placeholder="名前で検索" oninput="HoshinReportList.render()">
+  </div>
+
+  <!-- 日報リスト（HoshinReportList が data/reports.js のデータから描画する） -->
+  <div class="card">
+    <div class="report-list" id="report-list"></div>
+    <div class="empty-state" id="empty-state" style="display:none">条件に一致する日報がありません</div>
+  </div>
+
+</main>
+
+<!-- モバイルナビゲーション -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mobile-nav-btn" onclick="location.href='02_owner_home.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      ホーム
+    </button>
+    <button class="mobile-nav-btn" onclick="location.href='03_policy_editor.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      指針書
+    </button>
+    <button class="mobile-nav-btn active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      日報
+    </button>
+    <button class="mobile-nav-btn" onclick="toast('レポートページへ移動します')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      レポート
+    </button>
+    <button class="mobile-nav-btn" onclick="toast('メニューを開きます')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      その他
+    </button>
+  </div>
+</nav>
+
+<!-- ===== 日報詳細モーダル ===== -->
+<div id="report-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,28,22,.55);z-index:300;align-items:center;justify-content:center;padding:20px" onclick="closeReport()">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+    <div style="padding:18px 20px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:700;color:#1e1c18" id="report-name">田中 一郎の日報</div>
+      <button onclick="closeReport()" style="background:none;border:none;font-size:22px;color:#8a877e;cursor:pointer;padding:4px;border-radius:6px;line-height:1">✕</button>
+    </div>
+    <div style="padding:0 20px 20px">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:14px;flex-wrap:wrap">
+        <span style="font-size:12px;color:#8a877e" id="report-dept-date">営業部 ・ 2024年8月5日（月）</span>
+        <span id="report-tag" style="display:inline-flex;font-size:11px;padding:2px 8px;border-radius:20px;background:#e4f3ed;color:#2d5a3d;font-weight:500">お客様第一</span>
+        <span id="report-ai" style="display:inline-flex;align-items:center;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;background:#e4f3ed;color:#2d5a3d">✓ 指針と合っています</span>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:500;color:#8a877e;margin-bottom:4px">今日やったこと</div>
+        <div id="report-body" style="font-size:13px;color:#4a4740;line-height:1.75;background:#f4f2ed;border-radius:8px;padding:10px 12px"></div>
+      </div>
+      <div id="report-comment-wrap" style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:500;color:#8a877e;margin-bottom:4px">コメント</div>
+        <textarea id="report-comment-area" placeholder="コメントを入力..." style="width:100%;min-height:64px;font-size:13px;font-family:inherit;border:1px solid #e2dfd6;border-radius:8px;padding:9px 11px;resize:vertical"></textarea>
+      </div>
+      <div id="report-existing-comment" style="display:none;background:#eeedfe;border:1px solid #c8c4f4;border-radius:8px;padding:9px 12px;font-size:12px;color:#3d3591;margin-bottom:14px"></div>
+      <div style="display:flex;gap:8px">
+        <button id="report-send-btn" onclick="sendReportComment()" style="flex:1;padding:11px;background:#1a8060;border:none;color:#fff;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:inherit">✉️ コメントを送る</button>
+        <button id="report-close-btn" onclick="closeReport()" style="flex:0 0 auto;padding:11px 16px;background:#fff;border:1px solid #e2dfd6;color:#4a4740;font-size:13px;border-radius:8px;cursor:pointer;font-family:inherit">閉じる</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script src="data/store.js"></script>
+<script src="data/team.js"></script>
+<script src="data/reports.js"></script>
+<script src="shared/report-list.js"></script>
+<script>
+  let toastTimer;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  // 日報詳細モーダルの✕・閉じる・送信ボタンはHoshinReportListに委譲する
+  function closeReport() { HoshinReportList.close(); }
+  function sendReportComment() { HoshinReportList.sendComment(); }
+
+  // 経営者は全メンバーの日報を見られるので memberIds は null（絞り込みなし）
+  HoshinReportList.init({
+    memberIds: null,
+    listEl: document.getElementById('report-list'),
+    emptyEl: document.getElementById('empty-state'),
+    deptSelectEl: document.getElementById('dept-select'),
+    searchEl: document.getElementById('search-input'),
+    toast: toast
+  });
+</script>
+</body>
+</html>

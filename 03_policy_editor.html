@@ -1,0 +1,3150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoshin — 指針書をつくる</title>
+<style>
+:root {
+  --ink:       #1e1c18;
+  --ink-2:     #4a4740;
+  --ink-3:     #8a877e;
+  --ink-4:     #c4c1b8;
+  --bg:        #f4f2ed;
+  --surface:   #ffffff;
+  --border:    #e2dfd6;
+  --owner:     #2d5a3d;
+  --owner-md:  #1a8060;
+  --owner-lt:  #e4f3ed;
+  --red:       #b83232;
+  --red-lt:    #fdeaea;
+  --amber:     #b06a10;
+  --amber-lt:  #fef3e2;
+  --purple:    #3d3591;
+  --purple-lt: #eeedfe;
+  --gold:      #8a6a1a;
+  --gold-lt:   #fdf6e3;
+  --radius:    10px;
+  --radius-sm: 6px;
+  --shadow:    0 1px 3px rgba(0,0,0,.06);
+  --shadow-md: 0 2px 8px rgba(0,0,0,.09);
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── ナビ ── */
+.nav {
+  background: var(--owner);
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 0 20px; height: 54px;
+  display: flex; align-items: center; gap: 6px;
+}
+.nav-logo {
+  font-size: 18px; font-weight: 800;
+  color: #fff; letter-spacing: -.02em;
+  display: flex; align-items: center; gap: 8px;
+  margin-right: 14px;
+}
+.nav-logo svg { width: 20px; height: 20px; }
+.nav-link {
+  padding: 5px 11px; border-radius: var(--radius-sm);
+  font-size: 12px; color: rgba(255,255,255,.7);
+  cursor: pointer; transition: background .15s; white-space: nowrap;
+}
+.nav-link:hover { background: rgba(255,255,255,.12); }
+.nav-link.active { background: rgba(255,255,255,.2); color: #fff; font-weight: 500; }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.save-status {
+  font-size: 12px; color: rgba(255,255,255,.6);
+  display: flex; align-items: center; gap: 4px;
+}
+.nav-pub-btn {
+  padding: 7px 16px; border-radius: var(--radius-sm);
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.3);
+  color: #fff; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: background .15s; white-space: nowrap;
+}
+.nav-pub-btn:hover { background: rgba(255,255,255,.28); }
+.nav-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,.2); color: #fff;
+  font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+/* ── レイアウト ── */
+.layout {
+  max-width: 1100px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 54px);
+}
+
+/* ── サイドバー ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: sticky; top: 54px;
+  height: calc(100vh - 54px);
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.sidebar-head {
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-head-title {
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-3); letter-spacing: .04em;
+  margin-bottom: 10px;
+}
+.progress-wrap {
+  height: 5px; background: var(--border);
+  border-radius: 3px; overflow: hidden; margin-bottom: 5px;
+}
+.progress-fill {
+  height: 100%; background: var(--owner-md);
+  border-radius: 3px;
+  transition: width .4s cubic-bezier(.4,0,.2,1);
+}
+.progress-label {
+  font-size: 11px; color: var(--ink-3);
+  display: flex; justify-content: space-between;
+}
+.sidebar-nav { flex: 1; padding: 8px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer; transition: background .12s;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+.nav-item:hover { background: var(--bg); }
+.nav-item.active {
+  background: var(--owner-lt);
+  border-left-color: var(--owner-md);
+}
+.nav-item-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background: var(--border); color: var(--ink-3);
+  transition: all .2s;
+}
+.nav-item.done .nav-item-num {
+  background: var(--owner-lt); color: var(--owner);
+}
+.nav-item.active .nav-item-num {
+  background: var(--owner-md); color: #fff;
+}
+.nav-item-body { flex: 1; min-width: 0; }
+.nav-item-label {
+  font-size: 13px; color: var(--ink-2);
+  white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-item.active .nav-item-label { color: var(--owner); font-weight: 500; }
+.nav-item.done .nav-item-label { color: var(--owner); }
+.nav-item-sub { font-size: 10px; color: var(--ink-4); margin-top: 1px; }
+.nav-item-check {
+  font-size: 13px; flex-shrink: 0;
+  opacity: 0; transition: opacity .2s;
+}
+.nav-item.done .nav-item-check { opacity: 1; color: var(--owner-md); }
+.sidebar-foot {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 7px;
+}
+.pub-btn {
+  width: 100%; padding: 10px;
+  background: var(--owner);
+  border: none; color: #fff;
+  font-size: 13px; font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer; font-family: inherit;
+  transition: background .15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.pub-btn:hover { background: #1a4530; }
+.preview-btn {
+  width: 100%; padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  font-size: 12px; border-radius: var(--radius-sm);
+  cursor: pointer; font-family: inherit;
+  transition: border-color .15s;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.preview-btn:hover { border-color: var(--owner-md); }
+
+/* ── メインエリア ── */
+.main {
+  padding: 28px 32px 80px;
+  min-width: 0;
+}
+
+/* ── セクションヘッダー ── */
+.section-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--owner-lt);
+}
+.section-header-left {}
+.section-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  color: var(--owner); letter-spacing: .04em;
+  background: var(--owner-lt);
+  padding: 3px 10px; border-radius: 20px;
+  margin-bottom: 8px;
+}
+.section-title {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -.02em; color: var(--ink);
+  margin-bottom: 5px;
+}
+.section-desc {
+  font-size: 13px; color: var(--ink-3);
+  line-height: 1.6; max-width: 560px;
+}
+.section-nav-btns {
+  display: flex; gap: 8px; flex-shrink: 0;
+}
+.nav-prev, .nav-next {
+  padding: 8px 16px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: inherit;
+  transition: all .15s; white-space: nowrap;
+}
+.nav-prev {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+}
+.nav-prev:hover { border-color: var(--ink-3); }
+.nav-next {
+  background: var(--owner-md);
+  border: none; color: #fff;
+}
+.nav-next:hover { background: var(--owner); }
+
+/* ── カード ── */
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.form-card-head {
+  padding: 14px 18px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.form-card-icon { font-size: 20px; }
+.form-card-title {
+  font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.form-card-desc {
+  padding: 4px 18px 0;
+  font-size: 12px; color: var(--ink-3); line-height: 1.5;
+}
+.form-card-body { padding: 14px 18px 18px; }
+
+/* ── フォーム部品 ── */
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field > label {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 500; color: var(--ink-2);
+  margin-bottom: 5px;
+}
+.field > label .req { color: var(--red); margin-left: 2px; }
+.field > label .hint-btn {
+  font-size: 11px; color: var(--owner-md);
+  cursor: pointer; text-decoration: underline;
+  background: none; border: none; font-family: inherit;
+  padding: 0;
+}
+textarea, input[type="text"], input[type="date"] {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 13px; font-family: inherit;
+  color: var(--ink); background: var(--surface);
+  transition: border-color .15s, box-shadow .15s;
+  line-height: 1.6;
+}
+textarea { resize: vertical; min-height: 76px; }
+textarea:focus, input:focus {
+  outline: none;
+  border-color: var(--owner-md);
+  box-shadow: 0 0 0 3px var(--owner-lt);
+}
+textarea::placeholder, input::placeholder { color: var(--ink-4); }
+
+/* ── キーワードタグ ── */
+.keyword-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px; min-height: 44px;
+  cursor: text; transition: border-color .15s, box-shadow .15s;
+}
+.keyword-wrap:focus-within {
+  border-color: var(--owner-md);
+  box-shadow: 0 0 0 3px var(--owner-lt);
+}
+.kw-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--owner-lt); color: var(--owner);
+  font-size: 12px; padding: 3px 8px 3px 10px;
+  border-radius: 20px; font-weight: 500;
+}
+.kw-tag button {
+  background: none; border: none; cursor: pointer;
+  color: var(--owner); font-size: 14px;
+  line-height: 1; padding: 0; opacity: .7;
+  transition: opacity .15s;
+}
+.kw-tag button:hover { opacity: 1; }
+.kw-input {
+  border: none !important; outline: none !important;
+  box-shadow: none !important;
+  font-size: 12px; font-family: inherit;
+  color: var(--ink); min-width: 90px;
+  background: transparent; padding: 3px 4px !important;
+  width: auto;
+}
+
+/* ── バリュー・行動指針アイテム ── */
+.item-list { display: flex; flex-direction: column; gap: 10px; }
+.policy-item {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  border-left: 4px solid var(--owner-md);
+  display: flex; gap: 12px; align-items: flex-start;
+  position: relative;
+}
+.policy-item.value-item { border-left-color: #d4a847; }
+.item-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--owner-md); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.value-item .item-num { background: #d4a847; }
+.item-body { flex: 1; min-width: 0; }
+.item-title-input {
+  width: 100%; border: none; border-bottom: 1.5px solid var(--border);
+  background: transparent; font-size: 14px; font-weight: 700;
+  font-family: inherit; padding: 2px 0 5px;
+  color: var(--ink); margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.item-title-input:focus { outline: none; border-bottom-color: var(--owner-md); }
+.item-title-input::placeholder { color: var(--ink-4); font-weight: 400; }
+.item-remove {
+  position: absolute; top: 10px; right: 10px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-4); font-size: 16px;
+  padding: 4px; border-radius: 4px;
+  transition: color .15s, background .15s;
+  line-height: 1;
+}
+.item-remove:hover { color: var(--red); background: var(--red-lt); }
+.item-sub-label {
+  font-size: 11px; color: var(--ink-3);
+  margin: 6px 0 3px;
+}
+.add-item-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--owner);
+  cursor: pointer; padding: 8px 4px;
+  background: none; border: none;
+  font-family: inherit; transition: opacity .15s;
+  margin-top: 4px;
+}
+.add-item-btn:hover { opacity: .7; }
+
+/* ── 目標テーブル ── */
+.goal-table { width: 100%; border-collapse: collapse; }
+.goal-table th {
+  font-size: 11px; font-weight: 600; color: var(--ink-3);
+  padding: 6px 10px; text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.goal-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.goal-table tr:last-child td { border-bottom: none; }
+.goal-table tr:hover td { background: var(--bg); }
+.goal-table td input[type="text"] {
+  border: none; background: transparent;
+  padding: 4px 0; font-size: 13px;
+  border-bottom: 1px dashed transparent;
+  border-radius: 0;
+}
+.goal-table td input[type="text"]:focus {
+  border-bottom-color: var(--owner-md);
+  box-shadow: none;
+}
+.goal-tag {
+  display: inline-flex; font-size: 10px;
+  padding: 2px 7px; border-radius: 20px;
+  background: var(--owner-lt); color: var(--owner);
+  font-weight: 500;
+}
+.bar-mini {
+  height: 5px; background: var(--border);
+  border-radius: 3px; overflow: hidden;
+  width: 60px; display: inline-block; vertical-align: middle;
+}
+.bar-mini-fill {
+  height: 100%; border-radius: 3px;
+  background: var(--owner-md);
+}
+.goal-del {
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-4); font-size: 15px;
+  padding: 4px; border-radius: 4px;
+  transition: color .15s;
+}
+.goal-del:hover { color: var(--red); }
+
+/* ── ライフラインチャート ── */
+.lifeline-wrap {
+  position: relative;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px 32px 36px;
+  cursor: crosshair;
+  user-select: none;
+}
+.ll-canvas {
+  width: 100%; height: 180px; display: block;
+}
+.ll-y-high { position: absolute; top: 12px; left: 6px; font-size: 10px; color: var(--ink-3); }
+.ll-y-zero { position: absolute; top: 50%; left: 6px; transform: translateY(-50%); font-size: 10px; color: var(--ink-4); }
+.ll-y-low  { position: absolute; bottom: 32px; left: 6px; font-size: 10px; color: var(--ink-3); }
+.ll-x-labels {
+  position: absolute; bottom: 6px;
+  left: 36px; right: 8px;
+  display: flex; justify-content: space-between;
+}
+.ll-x-label { font-size: 10px; color: var(--ink-4); }
+.ll-add-hint {
+  position: absolute; bottom: 6px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px; color: var(--ink-4);
+  pointer-events: none;
+}
+.event-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 11px; color: var(--ink-2);
+  cursor: pointer; transition: border-color .15s;
+  margin: 3px;
+}
+.event-chip:hover { border-color: var(--owner-md); }
+.event-chip.high { border-left: 3px solid var(--owner-md); }
+.event-chip.low  { border-left: 3px solid var(--red); }
+
+/* ── AIサジェスト ── */
+.ai-suggest {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--purple-lt);
+  border: 1px solid #c8c4f4;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12px; color: var(--purple);
+  line-height: 1.65; margin-top: 10px;
+}
+.ai-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--purple); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+
+/* ── 完了バナー ── */
+.complete-banner {
+  background: var(--owner-lt);
+  border: 1.5px solid var(--owner-md);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 20px;
+}
+.complete-icon { font-size: 32px; flex-shrink: 0; }
+.complete-title { font-size: 16px; font-weight: 700; color: var(--owner); margin-bottom: 3px; }
+.complete-desc { font-size: 12px; color: var(--owner-md); line-height: 1.5; }
+.complete-actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ── タブ ── */
+.tabs { display: flex; gap: 3px; margin-bottom: 16px; }
+.tab {
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; cursor: pointer;
+  border: 1px solid var(--border);
+  color: var(--ink-3); background: var(--surface);
+  transition: all .15s;
+}
+.tab:hover { border-color: var(--owner-md); color: var(--owner); }
+.tab.active {
+  background: var(--owner-lt);
+  border-color: var(--owner-md);
+  color: var(--owner); font-weight: 500;
+}
+
+/* ── ヒントボックス ── */
+.hint-box {
+  background: var(--amber-lt);
+  border: 1px solid #f0cc98;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12px; color: var(--amber);
+  line-height: 1.6; margin-bottom: 10px;
+  display: none;
+}
+.hint-box.show { display: block; }
+
+/* ── モーダル ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(20,28,22,.55); z-index: 300;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: 14px; width: 100%; max-width: 540px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,.2);
+}
+.modal-head {
+  padding: 20px 22px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 17px; font-weight: 700; }
+.modal-close {
+  background: none; border: none; font-size: 22px;
+  color: var(--ink-3); cursor: pointer;
+  border-radius: var(--radius-sm); padding: 4px;
+  transition: background .15s; line-height: 1;
+}
+.modal-close:hover { background: var(--bg); }
+.modal-body { padding: 16px 22px 22px; }
+
+/* ── トースト ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--ink); color: #fff;
+  font-size: 13px; padding: 10px 20px;
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  white-space: nowrap; pointer-events: none; z-index: 999;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── モバイル ── */
+.mobile-sidebar-toggle {
+  display: none;
+  width: 100%; padding: 10px 16px;
+  background: var(--owner-lt);
+  border: none; border-bottom: 1px solid var(--border);
+  color: var(--owner); font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  text-align: left;
+}
+@media(max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar {
+    position: static; height: auto;
+    display: none; border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar.open { display: flex; }
+  .mobile-sidebar-toggle { display: block; }
+  .main { padding: 20px 16px 60px; }
+  .section-header { flex-direction: column; gap: 10px; }
+  .section-nav-btns { width: 100%; }
+  .nav-prev, .nav-next { flex: 1; text-align: center; }
+}
+</style>
+<script src="gate.js"></script>
+</head>
+<body>
+
+<!-- ナビ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      Hoshin
+    </div>
+    <div class="nav-link" onclick="toast('ホームへ移動します')">ホーム</div>
+    <div class="nav-link active">指針書をつくる</div>
+    <div class="nav-link" onclick="toast('日報一覧へ移動します')">日報一覧</div>
+    <div class="nav-link" onclick="toast('レポートへ移動します')">レポート</div>
+    <div class="nav-right">
+      <span class="save-status" id="save-status">💾 自動保存しました</span>
+      <button class="nav-pub-btn" onclick="openPublish()">全社に公開する 📢</button>
+      <div class="nav-avatar" onclick="toast('プロフィール設定')">山</div>
+    </div>
+  </div>
+</nav>
+
+<!-- モバイルサイドバートグル -->
+<button class="mobile-sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">
+  📋 セクション一覧を見る ▾
+</button>
+
+<div class="layout">
+
+  <!-- サイドバー -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-head-title">指針書の構成</div>
+      <div class="progress-wrap">
+        <div class="progress-fill" id="progress-fill" style="width:56%"></div>
+      </div>
+      <div class="progress-label">
+        <span id="progress-text">5 / 9 項目が記入済み</span>
+        <span id="progress-pct">56%</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item done"     id="nav-1" onclick="showSection(1)">
+        <div class="nav-item-num">1</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">あなたの志</div>
+          <div class="nav-item-sub">経営者の根本動機</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+      <div class="nav-item done"     id="nav-2" onclick="showSection(2)">
+        <div class="nav-item-num">2</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">経営理念</div>
+          <div class="nav-item-sub">なぜ存在するのか</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+      <div class="nav-item done active" id="nav-3" onclick="showSection(3)">
+        <div class="nav-item-num">3</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">目指す姿（ビジョン）</div>
+          <div class="nav-item-sub">将来どうなりたいか</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+      <div class="nav-item done"     id="nav-4" onclick="showSection(4)">
+        <div class="nav-item-num">4</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">使命（ミッション）</div>
+          <div class="nav-item-sub">何をする会社か</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+      <div class="nav-item done"     id="nav-5" onclick="showSection(5)">
+        <div class="nav-item-num">5</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">大切にする価値観</div>
+          <div class="nav-item-sub">バリュー</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+      <div class="nav-item"          id="nav-6" onclick="showSection(6)">
+        <div class="nav-item-num">6</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">行動のルール</div>
+          <div class="nav-item-sub">行動指針</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+      <div class="nav-item"          id="nav-7" onclick="showSection(7)">
+        <div class="nav-item-num">7</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">今年度の目標</div>
+          <div class="nav-item-sub">数値化計画（KGI/KPI）</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+      <div class="nav-item"          id="nav-8" onclick="showSection(8)">
+        <div class="nav-item-num">8</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">方針</div>
+          <div class="nav-item-sub">今年度、何を重視するか</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+      <div class="nav-item"          id="nav-9" onclick="showSection(9)">
+        <div class="nav-item-num">9</div>
+        <div class="nav-item-body">
+          <div class="nav-item-label">戦略</div>
+          <div class="nav-item-sub">どう勝ち、どう差別化するか</div>
+        </div>
+        <span class="nav-item-check">✓</span>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <button class="pub-btn" onclick="openPublish()">📢 全社に公開する</button>
+      <button class="preview-btn" onclick="previewPolicy()">👁 プレビュー</button>
+      <button class="preview-btn" onclick="location.href='04_export.html'">📄 ファイルで保存する</button>
+    </div>
+  </aside>
+
+  <!-- メインエリア -->
+  <main class="main" id="main-area">
+
+    <!-- ======== SECTION 1: 志 ======== -->
+    <div id="section-1" class="section-pane">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">01　あなたの志</div>
+          <div class="section-title">なぜこの仕事をしているのか</div>
+          <div class="section-desc">指針書の中で最も大切な部分です。ライフラインチャートで人生を振り返り、あなたの志を言葉にしましょう。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-next" onclick="showSection(2)">次へ：経営理念 →</button>
+        </div>
+      </div>
+
+      <!-- ライフラインチャート -->
+      <div class="form-card">
+        <div class="form-card-head">
+          <span class="form-card-icon">📈</span>
+          <span class="form-card-title">人生を振り返る（ライフラインチャート）</span>
+        </div>
+        <div class="form-card-desc">人生の山と谷を描き、感情が動いた出来事を記録してください。クリックでポイントを追加できます。</div>
+        <div class="form-card-body">
+          <div class="lifeline-wrap" onclick="addEvent()">
+            <div class="ll-y-high">高</div>
+            <div class="ll-y-low">低</div>
+            <div class="ll-x-labels">
+              <span class="ll-x-label">幼少期</span>
+              <span class="ll-x-label">10代</span>
+              <span class="ll-x-label">20代前半</span>
+              <span class="ll-x-label">20代後半</span>
+              <span class="ll-x-label">30代</span>
+              <span class="ll-x-label">40代〜</span>
+            </div>
+            <canvas class="ll-canvas" id="ll-canvas"></canvas>
+          </div>
+          <div style="margin-top:12px">
+            <div style="font-size:11px;color:var(--ink-3);margin-bottom:7px">登録した出来事（クリックで詳細）</div>
+            <div id="event-chips">
+              <span class="event-chip high" onclick="toast('起業の詳細を表示します')">▲ 初めての起業（20代前半）</span>
+              <span class="event-chip low"  onclick="toast('倒産の詳細を表示します')">▼ 事業失敗・倒産（20代後半）</span>
+              <span class="event-chip high" onclick="toast('再出発の詳細を表示します')">▲ 現会社 再出発（30代）</span>
+              <span class="event-chip high" onclick="toast('受賞の詳細を表示します')">▲ 業界アワード受賞（40代）</span>
+            </div>
+            <button class="add-item-btn" onclick="toast('出来事を追加できます')">＋ 出来事を追加する</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 志の言語化 -->
+      <div class="form-card">
+        <div class="form-card-head">
+          <span class="form-card-icon">🌟</span>
+          <span class="form-card-title">志を一文にまとめる</span>
+          <button style="margin-left:auto;padding:5px 12px;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--purple);font-size:11px;font-weight:500;border-radius:20px;cursor:pointer;font-family:inherit" onclick="generateAI()">✦ AIに提案してもらう</button>
+        </div>
+        <div class="form-card-desc">3つの問いに答えると、AIが志の下書きを提案します。</div>
+        <div class="form-card-body">
+          <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:14px">
+            <div class="field" style="margin-bottom:0">
+              <label>誰を幸せにしたいか</label>
+              <textarea style="min-height:84px" placeholder="例：迷っている経営者と、その会社で働く社員たち">迷っている経営者と、その会社で働く社員たち</textarea>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>何を解決したいか</label>
+              <textarea style="min-height:84px" placeholder="例：「なぜ働くか」がわからず消耗する職場">「なぜ働くか」がわからず消耗する職場をなくしたい</textarea>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>何を残したいか</label>
+              <textarea style="min-height:84px" placeholder="例：志ある経営者が増えた社会">「志ある経営者が増えた社会」という変化</textarea>
+            </div>
+          </div>
+          <div class="field">
+            <label>あなたの志（一文） <span class="req">*</span></label>
+            <textarea id="aspiration-text" style="min-height:56px;font-size:15px;font-weight:500">志ある経営者を増やし、働くすべての人が意味を感じられる社会をつくる。</textarea>
+          </div>
+          <div class="ai-suggest" id="ai-suggest" style="display:none">
+            <div class="ai-icon">✦</div>
+            <div>
+              <strong>AIの提案：</strong>「志ある経営者を増やし、働くすべての人が意味を感じられる社会をつくる。」<br>
+              <span style="font-size:11px;opacity:.8">この文をそのまま使っても、修正しても構いません。あなた自身の言葉が大切です。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== SECTION 2: 理念 ======== -->
+    <div id="section-2" class="section-pane" style="display:none">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">02　経営理念</div>
+          <div class="section-title">会社はなぜ存在するのか</div>
+          <div class="section-desc">会社の根本的な存在意義を表します。普遍的で変わらない核心です。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-prev" onclick="showSection(1)">← 志</button>
+          <button class="nav-next" onclick="showSection(3)">次へ：ビジョン →</button>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-card-head"><span class="form-card-icon">🏛</span><span class="form-card-title">理念を入力する</span></div>
+        <div class="form-card-body">
+          <div class="field">
+            <label>理念文（1〜2文） <span class="req">*</span> <button class="hint-btn" onclick="toggleHint('h2')">記入のコツ</button></label>
+            <div class="hint-box" id="h2">「私たちは〜します」「〜を通じて〜に貢献します」という形で書くと伝わりやすいです。</div>
+            <textarea id="rinen-text" style="min-height:60px">私たちは、人と人の繋がりを大切にし、すべての関わる人の幸福に貢献します。</textarea>
+          </div>
+          <div class="field">
+            <label>この理念の背景・想い</label>
+            <textarea style="min-height:88px">創業当時から一貫して大切にしてきた「人」を中心とした考え方を、すべての事業活動の土台に置いています。利益よりも先に人を大切にすることで、長期的な信頼関係が生まれると信じています。</textarea>
+          </div>
+          <div class="field">
+            <label>社員への浸透メッセージ <span style="font-size:10px;color:var(--ink-3);font-weight:400">（日報入力時にヒントとして表示されます）</span></label>
+            <input type="text" value="今日の行動が、誰かの幸福に繋がっていますか？">
+          </div>
+          <div class="field">
+            <label>AIタグ付けに使うキーワード <span style="font-size:10px;color:var(--ink-3);font-weight:400">（Enterで追加）</span></label>
+            <div class="keyword-wrap" onclick="this.querySelector('.kw-input').focus()">
+              <span class="kw-tag">人を大切に <button onclick="removeTag(this)">×</button></span>
+              <span class="kw-tag">幸福貢献 <button onclick="removeTag(this)">×</button></span>
+              <span class="kw-tag">繋がり <button onclick="removeTag(this)">×</button></span>
+              <input class="kw-input" placeholder="キーワードを追加..." onkeydown="addTag(event, this)">
+            </div>
+          </div>
+          <div class="ai-suggest">
+            <div class="ai-icon">✦</div>
+            <div>「幸福」「人を大切にする」「繋がり」というキーワードが日報に登場すると、この理念と関連付けられます。もう1〜2つ具体的なキーワードを追加すると精度が上がります。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== SECTION 3: ミッション ======== -->
+    <div id="section-3" class="section-pane" style="display:none">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">03　目指す姿（ビジョン）</div>
+          <div class="section-title">将来どうなりたいか</div>
+          <div class="section-desc">As is（現状）とTo be（ありたい姿）を入力し、AIとの対話でビジョンを深掘りします。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-prev" onclick="showSection(2)">← 理念</button>
+          <button class="nav-next" onclick="showSection(4)" id="vision-next-btn">次へ：ミッション →</button>
+        </div>
+      </div>
+
+      <!-- ステップタブ -->
+      <div style="display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:16px;box-shadow:var(--shadow)">
+        <button class="vision-tab active" id="vtab-asis" onclick="switchVisionTab('asis')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:var(--owner-lt);color:var(--owner)">📍 As is（現状）</button>
+        <button class="vision-tab" id="vtab-tobe" onclick="switchVisionTab('tobe')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">🏁 To be（ありたい姿）</button>
+        <button class="vision-tab" id="vtab-ai" onclick="switchVisionTab('ai')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">✦ AIで深掘り</button>
+        <button class="vision-tab" id="vtab-summary" onclick="switchVisionTab('summary')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">📝 まとめる</button>
+      </div>
+
+      <!-- ===== As is タブ ===== -->
+      <div id="vpane-asis">
+        <div style="background:var(--amber-lt);border:1px solid #f0cc98;border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--amber);line-height:1.65">
+          💡 <strong>現状を正直に書きましょう。</strong> 良い面だけでなく、課題や弱みも含めて率直に。自分を客観視することがビジョン構築の第一歩です。
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">📍</span><span class="form-card-title">As is — 今の会社の状態</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>現状の全体像（率直に） <span class="req">*</span></label>
+              <textarea id="v-asis-main" style="min-height:90px" placeholder="例：売上は年々増えているが、社員の疲労感が増している。営業に依存しすぎており仕組みがない。経営理念はあるが社員に浸透していない。" oninput="vAsisInput()"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field" style="margin-bottom:0">
+                <label>強み・できていること</label>
+                <textarea id="v-asis-strong" style="min-height:72px" placeholder="例：顧客からの信頼が厚い、技術力がある、リピート率が高い"></textarea>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>課題・弱み（正直に）</label>
+                <textarea id="v-asis-weak" style="min-height:72px" placeholder="例：人材育成の仕組みがない、マネジメント層が薄い、採用に苦労している"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button onclick="switchVisionTab('tobe');toast('次：To beを入力してください')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">次へ：To beを入力 →</button>
+        </div>
+      </div>
+
+      <!-- ===== To be タブ ===== -->
+      <div id="vpane-tobe" style="display:none">
+        <div style="background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--owner);line-height:1.65">
+          🏁 <strong>As isを踏まえた上で、ありたい姿を描きましょう。</strong> 制約を取り払って「本当になりたい姿」を書いてください。
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">🏁</span><span class="form-card-title">To be — 3〜5年後のありたい姿</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>ありたい姿（全体像） <span class="req">*</span></label>
+              <textarea id="v-tobe-main" style="min-height:90px" placeholder="例：社員全員が会社のビジョンを自分の言葉で語れる。仕組みで売上が作れる組織になっている。業界でNo.1の顧客満足度を誇る企業になっている。" oninput="vTobeInput()"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field" style="margin-bottom:0">
+                <label>数字で表すと（KGI）</label>
+                <textarea id="v-tobe-num" style="min-height:72px" placeholder="例：従業員満足度80%以上、売上3億円、顧客継続率95%、社員数50名"></textarea>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>誰のためのビジョンか</label>
+                <textarea id="v-tobe-for" style="min-height:72px" placeholder="例：社員と家族のため、お客様のため、地域社会のため、次世代の子どもたちのために"></textarea>
+              </div>
+            </div>
+            <div class="field">
+              <label>達成年度・マイルストーン</label>
+              <input type="text" id="v-milestone" placeholder="例：2025年: 100社導入 / 2027年: 1,000社 / 2030年: 10,000社">
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchVisionTab('asis')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← As isに戻る</button>
+          <button onclick="switchVisionTab('ai');startAiSession();toast('AIとの対話を開始します ✦')" style="padding:10px 20px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">✦ AIで深掘りする →</button>
+        </div>
+      </div>
+
+      <!-- ===== AI対話タブ ===== -->
+      <div id="vpane-ai" style="display:none">
+        <div style="background:var(--purple-lt);border:1px solid #c8c4f4;border-radius:var(--radius);overflow:hidden;margin-bottom:14px">
+          <!-- AIヘッダー -->
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid #c8c4f4">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✦</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--purple)">AIコーチとの対話</div>
+              <div style="font-size:11px;color:#6060c0">質問を返しながらビジョンを深掘りします</div>
+            </div>
+          </div>
+          <!-- メッセージエリア -->
+          <div id="v-messages" style="padding:14px;display:flex;flex-direction:column;gap:10px;min-height:180px;max-height:320px;overflow-y:auto;background:var(--surface)">
+            <div style="max-width:85%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)">
+              As is / To beの入力内容を読みました。いくつか深掘りの質問をします。<br><br>まず最初に：<strong>「ありたい姿」が実現したとき、誰が一番喜んでいますか？</strong><br><br>あなた自身？社員？お客様？家族？それとも社会全体？<br>ビジョンの「受益者」が明確になると、言葉の重みが変わります。
+            </div>
+          </div>
+          <!-- クイックボタン -->
+          <div style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;border-top:1px solid #c8c4f4;border-bottom:1px solid #c8c4f4">
+            <button onclick="vSendQuick('As isをもっと深掘りして')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">As isを深掘り</button>
+            <button onclick="vSendQuick('To beをもっと具体的にして')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">To beを具体化</button>
+            <button onclick="vSendQuick('ギャップを分析して')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">ギャップ分析</button>
+            <button onclick="vSendQuick('ビジョン文を一文にまとめて')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">一文にまとめる</button>
+            <button onclick="vSendQuick('社員に伝わるように言い換えて')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">言い換える</button>
+          </div>
+          <!-- 入力エリア -->
+          <div style="display:flex;gap:8px;padding:10px 14px">
+            <input type="text" id="v-ai-input" placeholder="AIに質問・相談する（例：もっと具体的にするには？）" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')vSendMsg()">
+            <button onclick="vSendMsg()" style="padding:9px 16px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;white-space:nowrap">送る</button>
+          </div>
+        </div>
+
+        <!-- ギャップ分析 -->
+        <div id="v-gap-section" style="display:none;margin-bottom:14px">
+          <div style="font-size:12px;font-weight:600;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;gap:5px">⇄ AIが分析したギャップと優先アクション</div>
+          <div id="v-gap-items" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchVisionTab('tobe')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← To beに戻る</button>
+          <button onclick="switchVisionTab('summary');buildSummary();toast('まとめを生成します ✦')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">📝 まとめを作る →</button>
+        </div>
+      </div>
+
+      <!-- ===== まとめタブ ===== -->
+      <div id="vpane-summary" style="display:none">
+        <div style="background:var(--owner-lt);border:1.5px solid var(--owner-md);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:12px;color:var(--owner);font-weight:600;margin-bottom:8px">✦ AIが生成したビジョン文（編集してください）</div>
+          <textarea id="v-vision-final" style="min-height:64px;font-size:15px;font-weight:500;border:1.5px solid var(--owner-md)" placeholder="AIが生成したビジョン文がここに入ります..."></textarea>
+          <div style="font-size:11px;color:var(--owner-md);margin-top:5px">※ あなた自身の言葉で書き直してください。AIの文はあくまで下書きです。</div>
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">📊</span><span class="form-card-title">As is → To be まとめ</span></div>
+          <div class="form-card-body">
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:6px">📍 As is（現状）</div>
+                <div id="v-summary-asis" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--amber-lt);border:1px solid #f0cc98;border-radius:var(--radius-sm);padding:9px 11px;min-height:80px">—</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 4px;color:var(--ink-4);font-size:20px">→</div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--owner);margin-bottom:6px">🏁 To be（ありたい姿）</div>
+                <div id="v-summary-tobe" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:9px 11px;min-height:80px">—</div>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:6px">⇄ ギャップと優先アクション</div>
+              <div id="v-summary-gap" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--bg);border-radius:var(--radius-sm);padding:9px 11px">分析中...</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onclick="switchVisionTab('ai')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← 対話に戻る</button>
+          <button onclick="saveVision()" style="padding:10px 20px;background:var(--owner);border:none;color:#fff;font-size:14px;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">保存して次へ：ミッション →</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======== SECTION 4: ミッション ======== -->
+    <div id="section-4" class="section-pane" style="display:none">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">04　使命（ミッション）</div>
+          <div class="section-title">私たちは何をする会社か</div>
+          <div class="section-desc">「誰に・何を・どうやって・なぜ」の4つを言葉にし、AIとの壁打ちを経て、ミッション文を選びます。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-prev" onclick="showSection(3)">← ビジョン</button>
+          <button class="nav-next" onclick="showSection(5)">次へ：バリュー →</button>
+        </div>
+      </div>
+
+      <!-- ステップタブ（6ステップ） -->
+      <div style="display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:16px;box-shadow:var(--shadow);flex-wrap:wrap">
+        <button class="mission-tab active" id="mtab-who" onclick="switchMissionTab('who')" style="flex:1;min-width:60px;padding:8px 4px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:var(--owner-lt);color:var(--owner)">① 誰に</button>
+        <button class="mission-tab" id="mtab-what" onclick="switchMissionTab('what')" style="flex:1;min-width:60px;padding:8px 4px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">② 何を</button>
+        <button class="mission-tab" id="mtab-how" onclick="switchMissionTab('how')" style="flex:1;min-width:60px;padding:8px 4px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">③ どうやって</button>
+        <button class="mission-tab" id="mtab-why" onclick="switchMissionTab('why')" style="flex:1;min-width:60px;padding:8px 4px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">④ なぜ</button>
+        <button class="mission-tab" id="mtab-ai" onclick="switchMissionTab('ai')" style="flex:1;min-width:60px;padding:8px 4px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">⑤ AI壁打ち</button>
+        <button class="mission-tab" id="mtab-select" onclick="switchMissionTab('select')" style="flex:1;min-width:60px;padding:8px 4px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">⑥ 選出</button>
+      </div>
+
+      <!-- ① 誰のために -->
+      <div id="mpane-who">
+        <div style="background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--owner);line-height:1.65">👥 <strong>誰のためのミッションか</strong>を具体的に。顔が思い浮かぶくらい絞ると、言葉に力が宿ります。</div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">👥</span><span class="form-card-title">① 誰のために？</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>ミッションの対象（顧客・受益者） <span class="req">*</span></label>
+              <textarea id="m-who" style="min-height:80px" placeholder="例：日本国内の中小企業（従業員10〜300名）の経営者・管理職">日本国内の中小企業（従業員10〜300名）の経営者と、その会社で働く社員</textarea>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button onclick="switchMissionTab('what')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">次へ：何を提供する →</button>
+        </div>
+      </div>
+
+      <!-- ② 何を提供する -->
+      <div id="mpane-what" style="display:none">
+        <div style="background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--owner);line-height:1.65">🎁 対象に対して<strong>提供する価値・成果</strong>を書きます。「モノ」ではなく「変化」で書くと伝わります。</div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">🎁</span><span class="form-card-title">② 何を提供する？</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>提供する価値・成果 <span class="req">*</span></label>
+              <textarea id="m-what" style="min-height:80px" placeholder="例：経営指針の言語化と、日報を通じて指針が現場に浸透する仕組み">経営指針の言語化と、日報を通じて指針が現場に浸透する仕組み</textarea>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchMissionTab('who')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← 誰に</button>
+          <button onclick="switchMissionTab('how')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">次へ：どうやって →</button>
+        </div>
+      </div>
+
+      <!-- ③ どうやって -->
+      <div id="mpane-how" style="display:none">
+        <div style="background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--owner);line-height:1.65">🛠 <strong>提供の方法・自社らしいやり方</strong>を書きます。他社と違う「手段」がミッションの独自性になります。</div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">🛠</span><span class="form-card-title">③ どうやって？</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>提供の方法・アプローチ</label>
+              <textarea id="m-how" style="min-height:80px" placeholder="例：AIとの対話で指針書づくりを支援し、日々の日報と接続する">AIとの対話で指針書づくりを支援し、日々の日報と接続して浸透を可視化する</textarea>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchMissionTab('what')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← 何を</button>
+          <button onclick="switchMissionTab('why')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">次へ：なぜやるのか →</button>
+        </div>
+      </div>
+
+      <!-- ④ なぜやるのか -->
+      <div id="mpane-why" style="display:none">
+        <div style="background:var(--amber-lt);border:1px solid #f0cc98;border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--amber);line-height:1.65">🔥 <strong>なぜこの事業をやるのか</strong>——原体験や信念を率直に。ここが弱いとミッションは他人事の言葉になります。</div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">🔥</span><span class="form-card-title">④ なぜやるのか？</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>事業をやる理由・信念 <span class="req">*</span></label>
+              <textarea id="m-why" style="min-height:80px" placeholder="例：すべての社員が「何のために働くか」を実感できる組織を増やしたいから">すべての社員が「何のために働くか」を実感できる組織を増やしたいから</textarea>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchMissionTab('how')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← どうやって</button>
+          <button onclick="switchMissionTab('ai');mStartAi()" style="padding:10px 20px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">✦ AIと壁打ちする →</button>
+        </div>
+      </div>
+
+      <!-- ⑤ AIと壁打ち -->
+      <div id="mpane-ai" style="display:none">
+        <div style="background:var(--purple-lt);border:1px solid #c8c4f4;border-radius:var(--radius);overflow:hidden;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid #c8c4f4">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✦</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--purple)">AIと壁打ち</div>
+              <div style="font-size:11px;color:#6060c0">①〜④の内容を読んで、ミッションを深掘りします</div>
+            </div>
+          </div>
+          <div id="m-messages" style="padding:14px;display:flex;flex-direction:column;gap:10px;min-height:160px;max-height:300px;overflow-y:auto;background:var(--surface)">
+            <div style="max-width:85%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)">①〜④の入力を読みました。ミッションを一段深めるために質問します。<br><br><strong>「④ なぜやるのか」で書いた想いは、あなた自身のどんな経験から来ていますか？</strong><br>原体験が一言そえられると、ミッションが「自分の言葉」になります。</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;border-top:1px solid #c8c4f4;border-bottom:1px solid #c8c4f4">
+            <button onclick="mSendQuick('対象をもっと具体的にして')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit">対象を具体化</button>
+            <button onclick="mSendQuick('提供価値を一言で言い換えて')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit">提供価値を言い換え</button>
+            <button onclick="mSendQuick('なぜを深掘りして')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit">なぜを深掘り</button>
+          </div>
+          <div style="display:flex;gap:8px;padding:10px 14px">
+            <input type="text" id="m-ai-input" placeholder="AIに質問・相談する（例：もっと短くするには？）" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')mSendMsg()">
+            <button onclick="mSendMsg()" style="padding:9px 16px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;white-space:nowrap">送る</button>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchMissionTab('why')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← なぜ</button>
+          <button onclick="switchMissionTab('select');mBuildCandidates();toast('ミッション候補を生成しました ✦')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">⑥ ミッションを選ぶ →</button>
+        </div>
+      </div>
+
+      <!-- ⑥ ミッション選出 -->
+      <div id="mpane-select" style="display:none">
+        <div class="form-card" style="margin-bottom:14px">
+          <div class="form-card-head"><span class="form-card-icon">🧩</span><span class="form-card-title">①〜④のふりかえり</span></div>
+          <div class="form-card-body" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ink-2)">
+            <div>👥 <strong>誰に：</strong><span id="m-ref-who">—</span></div>
+            <div>🎁 <strong>何を：</strong><span id="m-ref-what">—</span></div>
+            <div>🛠 <strong>どうやって：</strong><span id="m-ref-how">—</span></div>
+            <div>🔥 <strong>なぜ：</strong><span id="m-ref-why">—</span></div>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:5px">✦ AIが提案するミッション候補（クリックで選択）</div>
+        <div id="m-candidates" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+        <div class="form-card" style="border:1.5px solid var(--owner-md)">
+          <div class="form-card-head"><span class="form-card-icon">🎯</span><span class="form-card-title">確定するミッション文</span></div>
+          <div class="form-card-body">
+            <div class="field" style="margin-bottom:0">
+              <label>ミッション文 <span class="req">*</span> <span style="font-size:10px;color:var(--ink-3);font-weight:400">（候補を選ぶか、自分の言葉で編集）</span></label>
+              <textarea id="mission-text" style="min-height:64px;font-size:15px;font-weight:500;border:1.5px solid var(--owner-md)">中小企業の経営課題を解決し、すべての社員が働きがいを持てる組織をつくる。</textarea>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+          <button onclick="switchMissionTab('ai')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← 壁打ちに戻る</button>
+          <button onclick="saveMission()" style="padding:10px 20px;background:var(--owner);border:none;color:#fff;font-size:14px;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">保存して次へ：バリュー →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== SECTION 5: バリュー ======== -->
+    <div id="section-5" class="section-pane" style="display:none">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">05　大切にする価値観（バリュー）</div>
+          <div class="section-title">私たちが判断に迷ったときの拠り所</div>
+          <div class="section-desc">「判断に迷ったときの拠り所」を、AIとの壁打ちで過去の経験から引き出します。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-prev" onclick="showSection(4)">← ミッション</button>
+          <button class="nav-next" onclick="showSection(6)">次へ：行動指針 →</button>
+        </div>
+      </div>
+
+      <!-- ===== 価値観を導き出すAI壁打ち ===== -->
+      <div class="form-card" style="border:1.5px solid #c8c4f4;margin-bottom:16px">
+        <div class="form-card-head">
+          <span class="form-card-icon" style="background:var(--purple-lt)">✦</span>
+          <span class="form-card-title">AIと壁打ちして価値観を見つける</span>
+          <span id="bv-progress" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--purple);background:var(--purple-lt);padding:3px 10px;border-radius:20px">問い 1 / 4</span>
+        </div>
+        <div class="form-card-body">
+          <div style="font-size:12px;color:var(--ink-3);line-height:1.65;margin-bottom:12px">価値観は「頭で考える」より、<strong>過去の実際の判断や感情</strong>から見つかります。4つの問いに率直に答えてください。AIがあなたの言葉から価値観の候補を提案します。</div>
+          <!-- メッセージエリア -->
+          <div id="bv-messages" style="display:flex;flex-direction:column;gap:10px;min-height:120px;max-height:300px;overflow-y:auto;background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+            <div style="max-width:88%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)">まず伺います。仕事で<strong>判断に迷ったとき</strong>、最後は何を基準に決めていますか？<br>最近の具体的な場面を思い出して書いてみてください。</div>
+          </div>
+          <!-- 入力エリア -->
+          <div style="display:flex;gap:8px">
+            <input type="text" id="bv-ai-input" placeholder="思ったことを率直に入力…" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')bvSend()">
+            <button onclick="bvSend()" style="padding:9px 18px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;white-space:nowrap">送る</button>
+          </div>
+          <!-- 候補エリア -->
+          <div id="bv-candidates-wrap" style="display:none;margin-top:16px">
+            <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:5px">✦ あなたの言葉から見つかった価値観の候補</div>
+            <div id="bv-candidates" style="display:flex;flex-direction:column;gap:8px"></div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:8px">気に入った候補を「＋ 追加」すると、下のリストに反映されます。文言は自由に編集できます。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-card-head"><span class="form-card-icon">💎</span><span class="form-card-title">バリューを登録する</span></div>
+        <div class="form-card-body">
+          <div class="item-list" id="value-list">
+            <div class="policy-item value-item">
+              <div class="item-num">1</div>
+              <div class="item-body">
+                <input type="text" class="item-title-input" value="お客様第一" placeholder="バリューのタイトル">
+                <textarea style="min-height:52px" placeholder="説明">お客様の立場に立って考え、期待を超える価値を届ける。</textarea>
+                <div class="item-sub-label">具体例（日常の行動レベルで書く）</div>
+                <input type="text" value="まず相手の話を最後まで聞く。要望の背景を確かめてから動く。">
+              </div>
+              <button class="item-remove" onclick="removeItem(this, 'value-list')">×</button>
+            </div>
+            <div class="policy-item value-item">
+              <div class="item-num">2</div>
+              <div class="item-body">
+                <input type="text" class="item-title-input" value="誠実に行動する" placeholder="バリューのタイトル">
+                <textarea style="min-height:52px">言葉と行動を一致させ、約束を守る。都合の悪いことも正直に伝える。</textarea>
+                <div class="item-sub-label">具体例</div>
+                <input type="text" value="会議で言ったことは必ず実行する。できないときはその場で正直に伝える。">
+              </div>
+              <button class="item-remove" onclick="removeItem(this, 'value-list')">×</button>
+            </div>
+            <div class="policy-item value-item">
+              <div class="item-num">3</div>
+              <div class="item-body">
+                <input type="text" class="item-title-input" value="改善を続ける" placeholder="バリューのタイトル">
+                <textarea style="min-height:52px">現状に満足せず、小さな工夫を積み重ねて良くし続ける。</textarea>
+                <div class="item-sub-label">具体例</div>
+                <input type="text" value="毎週ひとつ業務を見直す。気づいた無駄はその場で直す。">
+              </div>
+              <button class="item-remove" onclick="removeItem(this, 'value-list')">×</button>
+            </div>
+            <div class="policy-item value-item">
+              <div class="item-num">4</div>
+              <div class="item-body">
+                <input type="text" class="item-title-input" value="挑戦を楽しむ" placeholder="バリューのタイトル">
+                <textarea style="min-height:52px">失敗を恐れず新しいことに取り組む。学びに変えて前に進む。</textarea>
+                <div class="item-sub-label">具体例</div>
+                <input type="text" value="月1回は新しいアプローチを試みる。うまくいかなくても振り返りを行う。">
+              </div>
+              <button class="item-remove" onclick="removeItem(this, 'value-list')">×</button>
+            </div>
+            <div class="policy-item value-item">
+              <div class="item-num">5</div>
+              <div class="item-body">
+                <input type="text" class="item-title-input" value="チームで助け合う" placeholder="バリューのタイトル">
+                <textarea style="min-height:52px">一人で抱え込まず、周囲に声をかけ、支え合って成果を出す。</textarea>
+                <div class="item-sub-label">具体例</div>
+                <input type="text" value="困ったら早めに相談する。手が空いたら仲間を手伝う。">
+              </div>
+              <button class="item-remove" onclick="removeItem(this, 'value-list')">×</button>
+            </div>
+          </div>
+          <button class="add-item-btn" onclick="addValue()">＋ バリューを追加する</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== SECTION 6: 行動指針 ======== -->
+    <div id="section-6" class="section-pane" style="display:none">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">06　行動のルール（行動指針）</div>
+          <div class="section-title">明日から実践できる行動のルール</div>
+          <div class="section-desc">バリューを「日々の具体的な行動」に落とし込みます。AIとの壁打ちで引き出せます。日報のAIタグ付けにも使われます。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-prev" onclick="showSection(5)">← バリュー</button>
+          <button class="nav-next" onclick="showSection(7)">次へ：目標 →</button>
+        </div>
+      </div>
+
+      <!-- ===== 行動指針を導き出すAI壁打ち ===== -->
+      <div class="form-card" style="border:1.5px solid #c8c4f4;margin-bottom:16px">
+        <div class="form-card-head">
+          <span class="form-card-icon" style="background:var(--purple-lt)">✦</span>
+          <span class="form-card-title">AIと壁打ちして行動指針を見つける</span>
+          <span id="bg-progress" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--purple);background:var(--purple-lt);padding:3px 10px;border-radius:20px">問い 1 / 4</span>
+        </div>
+        <div class="form-card-body">
+          <div style="font-size:12px;color:var(--ink-3);line-height:1.65;margin-bottom:12px">行動指針は<strong>「誰でも明日から実践できる」具体的な行動</strong>です。4つの問いに答えると、AIがあなたの言葉から行動指針の候補（タグ用キーワード付き）を提案します。</div>
+          <!-- メッセージエリア -->
+          <div id="bg-messages" style="display:flex;flex-direction:column;gap:10px;min-height:120px;max-height:300px;overflow-y:auto;background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+            <div style="max-width:88%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)">バリューを体現している人は、<strong>具体的に毎日どんな行動</strong>をしていますか？<br>「優秀だな」と思う人の動きを思い浮かべて書いてみてください。</div>
+          </div>
+          <!-- 入力エリア -->
+          <div style="display:flex;gap:8px">
+            <input type="text" id="bg-ai-input" placeholder="思いつく行動を率直に入力…" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')bgSend()">
+            <button onclick="bgSend()" style="padding:9px 18px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;white-space:nowrap">送る</button>
+          </div>
+          <!-- 候補エリア -->
+          <div id="bg-candidates-wrap" style="display:none;margin-top:16px">
+            <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:5px">✦ あなたの言葉から見つかった行動指針の候補</div>
+            <div id="bg-candidates" style="display:flex;flex-direction:column;gap:8px"></div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:8px">「＋ 追加」で下のリストに反映されます。タグ用キーワードも自動で入ります。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-card-head"><span class="form-card-icon">📌</span><span class="form-card-title">行動指針を登録する</span></div>
+        <div class="form-card-desc">「誰でも明日から実践できる」レベルで具体的に書きましょう。</div>
+        <div class="form-card-body">
+          <div class="item-list" id="guideline-list">
+            <div class="policy-item">
+              <div class="item-num">1</div>
+              <div class="item-body">
+                <input type="text" class="item-title-input" value="お客様の声を起点に動く">
+                <textarea style="min-height:48px">まずお客様に会い、話を聞く。会議よりも現場を優先する。</textarea>
+                <div class="item-sub-label">AIタグ用キーワード</div>
+                <input type="text" value="顧客第一・顧客訪問・お客様の声">
+              </div>
+              <button class="item-remove" onclick="removeItem(this, 'guideline-list')">×</button>
+            </div>
+            <div class="policy-item">
+              <div class="item-num">2</div>
+              <div class="item-body">
+                <input type="text" class="item-title-input" value="小さく試して、早く学ぶ">
+                <textarea style="min-height:48px">完璧を求めず、まず動く。結果をチームで振り返り次に活かす。</textarea>
+                <div class="item-sub-label">AIタグ用キーワード</div>
+                <input type="text" value="改善継続・試行錯誤・振り返り">
+              </div>
+              <button class="item-remove" onclick="removeItem(this, 'guideline-list')">×</button>
+            </div>
+            <div class="policy-item">
+              <div class="item-num">3</div>
+              <div class="item-body">
+                <input type="text" class="item-title-input" value="チームで助け合う">
+                <textarea style="min-height:48px">困ったときは一人で抱え込まず、周囲に声をかける。サポートを求めることは強さの証。</textarea>
+                <div class="item-sub-label">AIタグ用キーワード</div>
+                <input type="text" value="チーム協働・相互支援・助け合い">
+              </div>
+              <button class="item-remove" onclick="removeItem(this, 'guideline-list')">×</button>
+            </div>
+          </div>
+          <button class="add-item-btn" onclick="addGuideline()">＋ 行動指針を追加する</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== SECTION 7: 目標 ======== -->
+    <div id="section-7" class="section-pane" style="display:none">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">07　今年度の目標（数値化計画）</div>
+          <div class="section-title">会社・チーム・個人の目標を数字にする</div>
+          <div class="section-desc">KGI（最終目標）→ KPI（中間目標）→ 個人目標の順に設定します。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-prev" onclick="showSection(6)">← 行動指針</button>
+          <button class="nav-next" onclick="showSection(8)">次へ：方針 →</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this, 'tab-kgi')">会社全体の目標（KGI）</div>
+        <div class="tab" onclick="switchTab(this, 'tab-kpi')">チームの目標（KPI）</div>
+        <div class="tab" onclick="switchTab(this, 'tab-personal')">個人の目標</div>
+      </div>
+
+      <!-- KGI -->
+      <div id="tab-kgi" class="tab-content">
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">🎯</span><span class="form-card-title">会社全体の最終目標（KGI）</span></div>
+          <div class="form-card-desc">年度末に達成したい「結果の数字」です。3〜5個が目安です。</div>
+          <div class="form-card-body">
+            <table class="goal-table" id="kgi-table">
+              <thead><tr>
+                <th>目標の名前</th><th>関連指針</th><th>目標の数字</th><th>今の数字</th><th>期限</th><th>進み</th><th></th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+            <button class="add-item-btn" onclick="HoshinGoalsUI.addKgiRow('kgi-table')">＋ 目標を追加する</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div id="tab-kpi" class="tab-content" style="display:none">
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">📊</span><span class="form-card-title">チームの目標（KPI）— <span id="kpi-dept-label">営業部</span></span>
+            <select id="kpi-dept-select" onchange="switchKpiDept(this.value)" style="margin-left:auto;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface)">
+              <option value="sales">営業部</option><option value="dev">開発部</option><option value="admin">管理部</option>
+            </select>
+          </div>
+          <div class="form-card-desc" style="padding:0 0 10px;font-size:11px;color:var(--ink-3)">部署を切り替えると、その部署のKPIを個別に記入・保存できます。</div>
+          <div class="form-card-body">
+            <table class="goal-table" id="kpi-table">
+              <thead><tr><th>目標の名前</th><th>つながるKGI</th><th>目標の数字</th><th>今の数字</th><th>計測頻度</th><th>進み</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <button class="add-item-btn" onclick="HoshinGoalsUI.addKpiRow('kpi-table')">＋ KPIを追加する</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 個人 -->
+      <div id="tab-personal" class="tab-content" style="display:none">
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">👤</span><span class="form-card-title">個人の目標</span>
+            <select id="policy-personal-select" onchange="switchPolicyPersonalMember()" style="margin-left:auto;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--surface)">
+              <option value="tanaka">田中 一郎</option><option value="suzuki">鈴木 花子</option><option value="yamamoto">山本 次郎</option><option value="sato">佐藤 健太</option>
+            </select>
+          </div>
+          <div class="form-card-body">
+            <table class="goal-table" id="personal-table">
+              <thead><tr><th>目標の名前</th><th>つながるKPI</th><th>目標の数字</th><th>今の数字</th><th>計測頻度</th><th>進み</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <button class="add-item-btn" onclick="HoshinGoalsUI.addPersonalRow('personal-table')">＋ 個人目標を追加する</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== SECTION 8: 方針 ======== -->
+    <div id="section-8" class="section-pane" style="display:none">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">08　方針</div>
+          <div class="section-title">今年度、何を重視するか</div>
+          <div class="section-desc">方針は「選択と集中」。AIとの壁打ちで、今年の重点を2〜4個に絞り込みます。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-prev" onclick="showSection(7)">← 目標</button>
+          <button class="nav-next" onclick="showSection(9)" id="policy-next-btn">次へ：戦略 →</button>
+        </div>
+      </div>
+
+      <!-- ===== 方針を導き出すAI壁打ち ===== -->
+      <div class="form-card" style="border:1.5px solid #c8c4f4;margin-bottom:16px">
+        <div class="form-card-head">
+          <span class="form-card-icon" style="background:var(--purple-lt)">✦</span>
+          <span class="form-card-title">AIと壁打ちして方針を絞り込む</span>
+          <span id="bp-progress" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--purple);background:var(--purple-lt);padding:3px 10px;border-radius:20px">問い 1 / 4</span>
+        </div>
+        <div class="form-card-body">
+          <div style="font-size:12px;color:var(--ink-3);line-height:1.65;margin-bottom:12px">方針は「何をやるか」と同じくらい<strong>「何をやらないか」</strong>が大切です。4つの問いに答えると、AIが今年の重点方針の候補を提案します。<strong>2〜4個</strong>を目安に選んでください。</div>
+          <!-- メッセージエリア -->
+          <div id="bp-messages" style="display:flex;flex-direction:column;gap:10px;min-height:120px;max-height:280px;overflow-y:auto;background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+            <div style="max-width:88%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)">まず伺います。<strong>今年度、最も解決すべき課題</strong>は何ですか？<br>売上・人・仕組み・顧客——どこが一番のボトルネックでしょうか。</div>
+          </div>
+          <!-- 入力エリア -->
+          <div style="display:flex;gap:8px">
+            <input type="text" id="bp-ai-input" placeholder="思っていることを率直に入力…" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')bpSend()">
+            <button onclick="bpSend()" style="padding:9px 18px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;white-space:nowrap">送る</button>
+          </div>
+          <!-- 候補エリア -->
+          <div id="bp-candidates-wrap" style="display:none;margin-top:16px">
+            <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:5px">✦ 今年の重点方針の候補（クリックで選択・2〜4個）</div>
+            <div id="bp-candidates" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+          <!-- 選ばれた方針 -->
+          <div id="bp-selected-wrap" style="display:none;margin-top:14px;background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:11px 13px">
+            <div style="font-size:12px;font-weight:700;color:var(--owner);margin-bottom:6px">🎯 選んだ今年度の重点方針</div>
+            <div id="bp-selected-list" style="display:flex;flex-direction:column;gap:5px"></div>
+            <div style="font-size:11px;color:var(--owner-md);margin-top:7px">この内容は「📝 まとめる」タブの方針文に反映されます。文言は自由に編集できます。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ステップタブ -->
+      <div style="display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:16px;box-shadow:var(--shadow)">
+        <button class="vision-tab active" id="ptab-asis" onclick="switchPolicyTab('asis')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:var(--owner-lt);color:var(--owner)">📍 As is（現状）</button>
+        <button class="vision-tab" id="ptab-tobe" onclick="switchPolicyTab('tobe')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">🏁 To be（重視したい方針）</button>
+        <button class="vision-tab" id="ptab-ai" onclick="switchPolicyTab('ai')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">✦ AIで深掘り</button>
+        <button class="vision-tab" id="ptab-summary" onclick="switchPolicyTab('summary')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">📝 まとめる</button>
+      </div>
+
+      <!-- ===== As is タブ ===== -->
+      <div id="ppane-asis">
+        <div style="background:var(--amber-lt);border:1px solid #f0cc98;border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--amber);line-height:1.65">
+          💡 <strong>現状を正直に書きましょう。</strong> 今、何にどれだけ力を入れているか、率直に振り返ってください。
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">📍</span><span class="form-card-title">As is — 今の方針の状態</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>現状の全体像（率直に） <span class="req">*</span></label>
+              <textarea id="p-asis-main" style="min-height:90px" placeholder="例：日々の業務対応に追われ、中長期の方針まで手が回っていない。行動指針はあるが、今年度の具体的な重点施策が定まっていない。" oninput="pAsisInput()"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field" style="margin-bottom:0">
+                <label>強み・できていること</label>
+                <textarea id="p-asis-strong" style="min-height:72px" placeholder="例：既存事業は安定している、主要顧客との関係は良好"></textarea>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>課題・弱み（正直に）</label>
+                <textarea id="p-asis-weak" style="min-height:72px" placeholder="例：新しい取り組みへの投資判断が遅い、部門間の方針が揃っていない"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button onclick="switchPolicyTab('tobe');toast('次：To beを入力してください')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">次へ：To beを入力 →</button>
+        </div>
+      </div>
+
+      <!-- ===== To be タブ ===== -->
+      <div id="ppane-tobe" style="display:none">
+        <div style="background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--owner);line-height:1.65">
+          🏁 <strong>今年度、何を重視するのかを明確にしましょう。</strong> 「何をやらないか」も含めて、本当に注力したいことを書いてください。
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">🏁</span><span class="form-card-title">To be — 今年度重視する方針</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>今年度重視する方針（全体像） <span class="req">*</span></label>
+              <textarea id="p-tobe-main" style="min-height:90px" placeholder="例：新規顧客開拓よりも既存顧客のLTV最大化を最優先する。DX投資を今年度の最重要方針に据える。" oninput="pTobeInput()"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field" style="margin-bottom:0">
+                <label>数字で表すと（重点指標）</label>
+                <textarea id="p-tobe-num" style="min-height:72px" placeholder="例：既存顧客の解約率を5%以下に、DX関連施策を月1件以上実行"></textarea>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>誰のための方針か（対象範囲）</label>
+                <textarea id="p-tobe-for" style="min-height:72px" placeholder="例：全社員、特に営業・カスタマーサクセス部門"></textarea>
+              </div>
+            </div>
+            <div class="field">
+              <label>実行時期・マイルストーン</label>
+              <input type="text" id="p-milestone" placeholder="例：上期: 重点施策の選定 / 下期: 効果測定と改善">
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchPolicyTab('asis')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← As isに戻る</button>
+          <button onclick="switchPolicyTab('ai');startPolicyAiSession();toast('AIとの対話を開始します ✦')" style="padding:10px 20px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">✦ AIで深掘りする →</button>
+        </div>
+      </div>
+
+      <!-- ===== AI対話タブ ===== -->
+      <div id="ppane-ai" style="display:none">
+        <div style="background:var(--purple-lt);border:1px solid #c8c4f4;border-radius:var(--radius);overflow:hidden;margin-bottom:14px">
+          <!-- AIヘッダー -->
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid #c8c4f4">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✦</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--purple)">AIコーチとの対話</div>
+              <div style="font-size:11px;color:#6060c0">質問を返しながら方針を深掘りします</div>
+            </div>
+          </div>
+          <!-- メッセージエリア -->
+          <div id="p-messages" style="padding:14px;display:flex;flex-direction:column;gap:10px;min-height:180px;max-height:320px;overflow-y:auto;background:var(--surface)">
+            <div style="max-width:85%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)">
+              As is / To beの入力内容を読みました。いくつか深掘りの質問をします。<br><br>まず最初に：<strong>「今年度、あえてやらないと決めることは何ですか？」</strong><br><br>方針を絞り込むには、何をやるかと同じくらい「何をやらないか」が重要です。
+            </div>
+          </div>
+          <!-- クイックボタン -->
+          <div style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;border-top:1px solid #c8c4f4;border-bottom:1px solid #c8c4f4">
+            <button onclick="pSendQuick('As isをもっと深掘りして')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">As isを深掘り</button>
+            <button onclick="pSendQuick('To beをもっと具体的にして')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">To beを具体化</button>
+            <button onclick="pSendQuick('ギャップを分析して')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">ギャップ分析</button>
+            <button onclick="pSendQuick('方針文を一文にまとめて')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">一文にまとめる</button>
+            <button onclick="pSendQuick('社員に伝わるように言い換えて')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">言い換える</button>
+          </div>
+          <!-- 入力エリア -->
+          <div style="display:flex;gap:8px;padding:10px 14px">
+            <input type="text" id="p-ai-input" placeholder="AIに質問・相談する（例：もっと具体的にするには？）" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')pSendMsg()">
+            <button onclick="pSendMsg()" style="padding:9px 16px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;white-space:nowrap">送る</button>
+          </div>
+        </div>
+
+        <!-- ギャップ分析 -->
+        <div id="p-gap-section" style="display:none;margin-bottom:14px">
+          <div style="font-size:12px;font-weight:600;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;gap:5px">⇄ AIが分析したギャップと優先アクション</div>
+          <div id="p-gap-items" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchPolicyTab('tobe')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← To beに戻る</button>
+          <button onclick="switchPolicyTab('summary');buildPolicySummary();toast('まとめを生成します ✦')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">📝 まとめを作る →</button>
+        </div>
+      </div>
+
+      <!-- ===== まとめタブ ===== -->
+      <div id="ppane-summary" style="display:none">
+        <div style="background:var(--owner-lt);border:1.5px solid var(--owner-md);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:12px;color:var(--owner);font-weight:600;margin-bottom:8px">✦ AIが生成した方針文（編集してください）</div>
+          <textarea id="p-policy-final" style="min-height:64px;font-size:15px;font-weight:500;border:1.5px solid var(--owner-md)" placeholder="AIが生成した方針文がここに入ります..."></textarea>
+          <div style="font-size:11px;color:var(--owner-md);margin-top:5px">※ あなた自身の言葉で書き直してください。AIの文はあくまで下書きです。</div>
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">📊</span><span class="form-card-title">As is → To be まとめ</span></div>
+          <div class="form-card-body">
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:6px">📍 As is（現状）</div>
+                <div id="p-summary-asis" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--amber-lt);border:1px solid #f0cc98;border-radius:var(--radius-sm);padding:9px 11px;min-height:80px">—</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 4px;color:var(--ink-4);font-size:20px">→</div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--owner);margin-bottom:6px">🏁 To be（重視したい方針）</div>
+                <div id="p-summary-tobe" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:9px 11px;min-height:80px">—</div>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:6px">⇄ ギャップと優先アクション</div>
+              <div id="p-summary-gap" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--bg);border-radius:var(--radius-sm);padding:9px 11px">分析中...</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onclick="switchPolicyTab('ai')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← 対話に戻る</button>
+          <button onclick="savePolicy()" style="padding:10px 20px;background:var(--owner);border:none;color:#fff;font-size:14px;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">保存して次へ：戦略 →</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======== SECTION 9: 戦略 ======== -->
+    <div id="section-9" class="section-pane" style="display:none">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-tag">09　戦略</div>
+          <div class="section-title">どう勝ち、どう差別化するか</div>
+          <div class="section-desc">As is（現状）とTo be（目指す戦略ポジション）を入力し、AIとの対話で戦略を深掘りします。</div>
+        </div>
+        <div class="section-nav-btns">
+          <button class="nav-prev" onclick="showSection(8)">← 方針</button>
+          <button class="nav-next" onclick="openPublish()">完成・公開する 🎉</button>
+        </div>
+      </div>
+
+      <!-- 08で確定した方針を参照表示 -->
+      <div id="strategy-policy-ref" style="background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--owner);line-height:1.7">
+        <div style="font-weight:600;margin-bottom:4px">🎯 確定した方針（08）をもとに戦略を立てます</div>
+        <div id="strategy-policy-ref-text" style="color:var(--ink-2)">方針（08）がまだ保存されていません。先に方針を決めることをおすすめします。</div>
+      </div>
+
+      <!-- ステップタブ -->
+      <div style="display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:16px;box-shadow:var(--shadow)">
+        <button class="vision-tab active" id="stab-asis" onclick="switchStrategyTab('asis')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:var(--owner-lt);color:var(--owner)">📍 As is（現状）</button>
+        <button class="vision-tab" id="stab-tobe" onclick="switchStrategyTab('tobe')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">🏁 To be（目指す戦略ポジション）</button>
+        <button class="vision-tab" id="stab-ai" onclick="switchStrategyTab('ai')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">✦ AIで深掘り</button>
+        <button class="vision-tab" id="stab-summary" onclick="switchStrategyTab('summary')" style="flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:none;color:var(--ink-3)">📝 まとめる</button>
+      </div>
+
+      <!-- ===== As is タブ ===== -->
+      <div id="spane-asis">
+        <div style="background:var(--amber-lt);border:1px solid #f0cc98;border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--amber);line-height:1.65">
+          💡 <strong>現状の事業・競争環境を正直に書きましょう。</strong> 良い面だけでなく、弱みやリスクも含めて率直に。
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">📍</span><span class="form-card-title">As is — 今の事業・競争環境</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>現状の事業・競争環境（率直に） <span class="req">*</span></label>
+              <textarea id="s-asis-main" style="min-height:90px" placeholder="例：価格競争に巻き込まれやすく、差別化要素が価格以外に乏しい。特定の大口顧客への依存度が高い。" oninput="sAsisInput()"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field" style="margin-bottom:0">
+                <label>強み・優位性</label>
+                <textarea id="s-asis-strong" style="min-height:72px" placeholder="例：技術力・対応スピード、長年の信頼関係"></textarea>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>課題・リスク（正直に）</label>
+                <textarea id="s-asis-weak" style="min-height:72px" placeholder="例：競合の値下げ攻勢、主要顧客の離反リスク"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button onclick="switchStrategyTab('tobe');toast('次：To beを入力してください')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">次へ：To beを入力 →</button>
+        </div>
+      </div>
+
+      <!-- ===== To be タブ ===== -->
+      <div id="spane-tobe" style="display:none">
+        <div style="background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--owner);line-height:1.65">
+          🏁 <strong>目指す戦略ポジションを描きましょう。</strong> 競合と何で戦うのか、何で戦わないのかを明確にしてください。
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">🏁</span><span class="form-card-title">To be — 目指す戦略ポジション</span></div>
+          <div class="form-card-body">
+            <div class="field">
+              <label>目指す戦略ポジション（全体像） <span class="req">*</span></label>
+              <textarea id="s-tobe-main" style="min-height:90px" placeholder="例：価格ではなく「伴走支援の質」で選ばれるポジションを確立する。ニッチ市場でNo.1のシェアを獲得する。" oninput="sTobeInput()"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field" style="margin-bottom:0">
+                <label>数字で表すと（KGI）</label>
+                <textarea id="s-tobe-num" style="min-height:72px" placeholder="例：新規事業の売上構成比30%、顧客単価20%向上"></textarea>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>注力する事業領域・顧客セグメント</label>
+                <textarea id="s-tobe-for" style="min-height:72px" placeholder="例：中小製造業向けのDX支援、中堅企業の経営企画部門"></textarea>
+              </div>
+            </div>
+            <div class="field">
+              <label>達成年度・マイルストーン</label>
+              <input type="text" id="s-milestone" placeholder="例：2025年: 新サービス立ち上げ / 2027年: シェアNo.1">
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchStrategyTab('asis')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← As isに戻る</button>
+          <button onclick="switchStrategyTab('ai');startStrategyAiSession();toast('AIとの対話を開始します ✦')" style="padding:10px 20px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">✦ AIで深掘りする →</button>
+        </div>
+      </div>
+
+      <!-- ===== AI対話タブ ===== -->
+      <div id="spane-ai" style="display:none">
+        <div style="background:var(--purple-lt);border:1px solid #c8c4f4;border-radius:var(--radius);overflow:hidden;margin-bottom:14px">
+          <!-- AIヘッダー -->
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid #c8c4f4">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✦</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--purple)">AIコーチとの対話</div>
+              <div style="font-size:11px;color:#6060c0">質問を返しながら戦略を深掘りします</div>
+            </div>
+          </div>
+          <!-- メッセージエリア -->
+          <div id="s-messages" style="padding:14px;display:flex;flex-direction:column;gap:10px;min-height:180px;max-height:320px;overflow-y:auto;background:var(--surface)">
+            <div style="max-width:85%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)">
+              As is / To beの入力内容を読みました。競争環境を踏まえて深掘りします。<br><br>まず最初に：<strong>「その戦略ポジションを、競合が簡単に真似できないのはなぜですか？」</strong><br><br>持続的な優位性の源泉を言語化することが、戦略の核心です。
+            </div>
+          </div>
+          <!-- クイックボタン -->
+          <div style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;border-top:1px solid #c8c4f4;border-bottom:1px solid #c8c4f4">
+            <button onclick="sSendQuick('As isをもっと深掘りして')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">As isを深掘り</button>
+            <button onclick="sSendQuick('To beをもっと具体的にして')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">To beを具体化</button>
+            <button onclick="sSendQuick('ギャップを分析して')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">ギャップ分析</button>
+            <button onclick="sSendQuick('戦略文を一文にまとめて')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">一文にまとめる</button>
+            <button onclick="sSendQuick('社員に伝わるように言い換えて')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid #c8c4f4;background:var(--surface);color:var(--purple);cursor:pointer;font-family:inherit;transition:background .15s">言い換える</button>
+          </div>
+          <!-- 入力エリア -->
+          <div style="display:flex;gap:8px;padding:10px 14px">
+            <input type="text" id="s-ai-input" placeholder="AIに質問・相談する（例：もっと具体的にするには？）" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')sSendMsg()">
+            <button onclick="sSendMsg()" style="padding:9px 16px;background:var(--purple);border:none;color:#fff;font-size:13px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;white-space:nowrap">送る</button>
+          </div>
+        </div>
+
+        <!-- ギャップ分析 -->
+        <div id="s-gap-section" style="display:none;margin-bottom:14px">
+          <div style="font-size:12px;font-weight:600;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;gap:5px">⇄ AIが分析したギャップと優先アクション</div>
+          <div id="s-gap-items" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between">
+          <button onclick="switchStrategyTab('tobe')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← To beに戻る</button>
+          <button onclick="switchStrategyTab('summary');buildStrategySummary();toast('まとめを生成します ✦')" style="padding:10px 20px;background:var(--owner-md);border:none;color:#fff;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">📝 まとめを作る →</button>
+        </div>
+      </div>
+
+      <!-- ===== まとめタブ ===== -->
+      <div id="spane-summary" style="display:none">
+        <div style="background:var(--owner-lt);border:1.5px solid var(--owner-md);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:12px;color:var(--owner);font-weight:600;margin-bottom:8px">✦ AIが生成した戦略文（編集してください）</div>
+          <textarea id="s-strategy-final" style="min-height:64px;font-size:15px;font-weight:500;border:1.5px solid var(--owner-md)" placeholder="AIが生成した戦略文がここに入ります..."></textarea>
+          <div style="font-size:11px;color:var(--owner-md);margin-top:5px">※ あなた自身の言葉で書き直してください。AIの文はあくまで下書きです。</div>
+        </div>
+        <div class="form-card">
+          <div class="form-card-head"><span class="form-card-icon">📊</span><span class="form-card-title">As is → To be まとめ</span></div>
+          <div class="form-card-body">
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:6px">📍 As is（現状）</div>
+                <div id="s-summary-asis" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--amber-lt);border:1px solid #f0cc98;border-radius:var(--radius-sm);padding:9px 11px;min-height:80px">—</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 4px;color:var(--ink-4);font-size:20px">→</div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--owner);margin-bottom:6px">🏁 To be（目指す戦略ポジション）</div>
+                <div id="s-summary-tobe" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:9px 11px;min-height:80px">—</div>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:6px">⇄ ギャップと優先アクション</div>
+              <div id="s-summary-gap" style="font-size:12px;color:var(--ink-2);line-height:1.7;background:var(--bg);border-radius:var(--radius-sm);padding:9px 11px">分析中...</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onclick="switchStrategyTab('ai')" style="padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">← 対話に戻る</button>
+          <button onclick="saveStrategy()" style="padding:10px 20px;background:var(--owner);border:none;color:#fff;font-size:14px;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit">保存して公開準備へ 🎉</button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- 公開確認モーダル -->
+<div class="modal-overlay" id="modal-publish" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title">指針書を全社に公開する</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--owner-lt);border:1px solid var(--owner-md);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--owner);line-height:1.65">
+        📢 公開すると、全社員の「指針書を読む」ページに表示されます。<br>日報入力時のヒントや、AIのタグ付けにも使われます。
+      </div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">公開する内容の確認</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--owner-md)">✓</span> 01 あなたの志</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--owner-md)">✓</span> 02 経営理念</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--owner-md)">✓</span> 03 目指す姿（ビジョン）</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--owner-md)">✓</span> 04 使命（ミッション）</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--owner-md)">✓</span> 05 大切にする価値観</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)"><span>—</span> 06 行動のルール（未記入）</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)"><span>—</span> 07 今年度の目標（未記入）</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)"><span>—</span> 08 方針（未記入）</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3)"><span>—</span> 09 戦略（未記入）</div>
+      </div>
+      <div style="background:var(--amber-lt);border:1px solid #f0cc98;border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--amber);margin-bottom:16px">
+        ⚠️ 未記入の項目は「準備中」として表示されます。後から追記して再公開できます。
+      </div>
+      <button style="width:100%;padding:13px;background:var(--owner);border:none;color:#fff;font-size:15px;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit" onclick="doPublish()">
+        📢 全社に公開する
+      </button>
+      <button style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);color:var(--ink-2);font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;margin-top:8px" onclick="closeModal()">
+        キャンセル
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script src="data/store.js"></script>
+<script src="data/team.js"></script>
+<script src="data/goals.js"></script>
+<script src="shared/goals-ui.js"></script>
+<script>
+function switchPolicyPersonalMember() {
+  const key = document.getElementById('policy-personal-select').value;
+  HoshinGoalsUI.renderPersonalTable('personal-table', key);
+}
+// ── 指針書の本文を保存・復元（単一情報源: HoshinStore） ──
+// 志・理念・ビジョン・ミッション・バリュー・行動指針・方針・戦略の各入力を
+// HoshinStore（localStorage）に保存する。目標(KGI/KPI)は HoshinGoals が別途管理、
+// AIチャット入力は保存対象外とする。キーは「セクションID＋セクション内の連番」で安定させる。
+const POLICY_DOC_KEY = 'policyDoc';
+function assignPolicyKeys() {
+  document.querySelectorAll('.section-pane').forEach(pane => {
+    const sid = pane.id;
+    let idx = 0;
+    pane.querySelectorAll('textarea, input[type="text"], input[type="date"]').forEach(el => {
+      if (el.id && el.id.endsWith('-ai-input')) return; // AIチャット入力は保存しない
+      if (el.closest('.goal-table')) return;            // 目標はHoshinGoalsが管理
+      el.dataset.pkey = sid + '_' + idx;
+      idx++;
+    });
+  });
+}
+function savePolicyDoc() {
+  const fields = document.querySelectorAll('[data-pkey]');
+  if (!fields.length) return; // キー未割当時の空上書きを防止
+  const data = {};
+  fields.forEach(el => { data[el.dataset.pkey] = el.value; });
+  HoshinStore.set(POLICY_DOC_KEY, data);
+}
+function restorePolicyDoc() {
+  const data = HoshinStore.get(POLICY_DOC_KEY, null);
+  if (!data) return;
+  document.querySelectorAll('[data-pkey]').forEach(el => {
+    if (data[el.dataset.pkey] !== undefined) el.value = data[el.dataset.pkey];
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  HoshinGoalsUI.renderKgiTable('kgi-table');
+  HoshinGoalsUI.renderKpiTable('kpi-table', 'sales');
+  HoshinGoalsUI.renderPersonalTable('personal-table', 'tanaka');
+  assignPolicyKeys();
+  restorePolicyDoc();
+});
+
+// KPIの部署切替（営業／開発／管理）
+const KPI_DEPT_LABELS = { sales: '営業部', dev: '開発部', admin: '管理部' };
+function switchKpiDept(dept) {
+  HoshinGoalsUI.renderKpiTable('kpi-table', dept);
+  const label = document.getElementById('kpi-dept-label');
+  if (label) label.textContent = KPI_DEPT_LABELS[dept] || dept;
+  const sel = document.getElementById('kpi-dept-select');
+  if (sel && sel.value !== dept) sel.value = dept;
+}
+
+// ── セクション表示 ──
+let currentSection = 3;
+function showSection(n) {
+  savePolicyDoc(); // 画面移動前に現在の入力を保存
+  document.querySelectorAll('.section-pane').forEach(p => p.style.display = 'none');
+  document.getElementById('section-' + n).style.display = 'block';
+  document.querySelectorAll('.nav-item').forEach((el, i) => {
+    el.classList.remove('active');
+  });
+  const navEl = document.getElementById('nav-' + n);
+  if (navEl) navEl.classList.add('active');
+  currentSection = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // 6,7,8,9 を done にする
+  if (n === 6 || n === 7 || n === 8 || n === 9) {
+    const el = document.getElementById('nav-' + n);
+    if (el && !el.classList.contains('done')) {
+      el.classList.add('done');
+      updateProgress();
+    }
+  }
+  // 09（戦略）は08（方針）の確定内容を参照して表示する
+  if (n === 9) loadPolicyRef();
+  // モバイルサイドバーを閉じる
+  document.getElementById('sidebar').classList.remove('open');
+  toast('「' + ['志','経営理念','ビジョン','ミッション','バリュー','行動指針','今年度の目標','方針','戦略'][n-1] + '」を編集中');
+}
+
+// ── 進捗更新 ──
+function updateProgress() {
+  const doneCount = document.querySelectorAll('.nav-item.done').length;
+  const total = 9;
+  const pct = Math.round(doneCount / total * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = doneCount + ' / ' + total + ' 項目が記入済み';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+// ── タブ切り替え ──
+function switchTab(el, targetId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+  document.getElementById(targetId).style.display = 'block';
+}
+
+// ── バリュー追加 ──
+let valueCount = 5;
+// ══════════════════════════════════════
+// ── 価値観を導き出すAI壁打ち（バリュー） ──
+// 過去の判断・感情を引き出す4つの問いを順に投げ、回答の言葉から
+// 価値観の候補を抽出して提案する。候補は addValue() でリストに反映。
+const bvQuestions = [
+  '仕事で<strong>判断に迷ったとき</strong>、最後は何を基準に決めていますか？<br>最近の具体的な場面で。', // 1問目はHTMLに記載済み
+  'では、<strong>どんな行動をした社員</strong>を心から「よくやった」と思いますか？',
+  '逆に、成果が出ても<strong>「それはうちのやり方じゃない」</strong>と感じるのはどんな時ですか？',
+  '最後に。事業が苦しくても<strong>これだけは曲げられない</strong>ことは何ですか？'
+];
+let bvStep = 0;             // 0＝1問目に回答待ち（1問目はHTML表示済み）
+const bvAnswers = [];
+
+// キーワード → 価値観候補のマッピング
+const bvValueMap = [
+  { keys:['客','顧客','お客','ユーザー','相手の立場','喜','役に立','満足'], title:'お客様第一', desc:'お客様の立場に立って考え、期待を超える価値を届ける。', ex:'まず相手の話を最後まで聞く。要望の背景を確かめてから動く。' },
+  { keys:['正直','誠実','嘘','約束','ごまか','逃げ','透明','隠さ','ずる'], title:'誠実に行動する', desc:'言葉と行動を一致させ、約束を守る。都合の悪いことも正直に伝える。', ex:'できないことはその場で正直に伝える。ミスはすぐ報告する。' },
+  { keys:['挑戦','新し','失敗','変化','試','チャレンジ','恐れ','前例'], title:'挑戦を楽しむ', desc:'失敗を恐れず新しいことに取り組み、学びに変えて前に進む。', ex:'月1回は新しいやり方を試す。失敗は責めず一緒に振り返る。' },
+  { keys:['チーム','仲間','助け','協力','一人','支え','みんな','共有','抱え込'], title:'チームで助け合う', desc:'一人で抱え込まず、周囲に声をかけ、支え合って成果を出す。', ex:'困ったら早めに相談する。手が空いたら仲間を手伝う。' },
+  { keys:['改善','工夫','効率','見直','こつこつ','継続','丁寧','品質','質'], title:'改善を続ける', desc:'現状に満足せず、小さな工夫を積み重ねて良くし続ける。', ex:'毎週ひとつ業務を見直す。気づいた無駄はその場で直す。' },
+  { keys:['スピード','早','速','即','すぐ','決断','行動','まず'], title:'まず動く', desc:'完璧を待たず、まず一歩動いて、走りながら整える。', ex:'迷ったら小さく試して判断する。連絡は24時間以内に一次返信。' },
+  { keys:['成長','学','育','人材','教育','任せ','機会'], title:'人の成長を支える', desc:'一人ひとりの成長を信じ、機会と対話で後押しする。', ex:'月1回の1on1で成長を一緒に振り返る。挑戦の機会を渡す。' }
+];
+
+function bvAppend(role, html) {
+  const box = document.getElementById('bv-messages');
+  if (!box) return;
+  const d = document.createElement('div');
+  if (role === 'user') {
+    d.style.cssText = 'align-self:flex-end;max-width:88%;padding:10px 13px;border-radius:var(--radius) 0 var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--owner-md);color:#fff';
+  } else {
+    d.style.cssText = 'max-width:88%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)';
+  }
+  d.innerHTML = html;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function bvProgress() {
+  const p = document.getElementById('bv-progress');
+  if (!p) return;
+  p.textContent = bvStep < bvQuestions.length ? ('問い ' + (bvStep + 1) + ' / ' + bvQuestions.length) : '候補が出ました ✦';
+}
+function bvAck(v) {
+  const s = v.length > 20 ? v.slice(0, 20) + '…' : v;
+  return 'なるほど、「' + s + '」ですね。大切な視点です。';
+}
+function bvSend() {
+  const inp = document.getElementById('bv-ai-input');
+  const v = inp.value.trim();
+  if (!v) return;
+  if (bvStep >= bvQuestions.length) { // 質問終了後の自由入力
+    bvAppend('user', v); inp.value = '';
+    setTimeout(() => bvAppend('ai', 'ありがとうございます。その内容も踏まえ、下の候補から近いものを選んでみてください。'), 400);
+    return;
+  }
+  bvAppend('user', v);
+  inp.value = '';
+  bvAnswers.push(v);
+  bvStep++;
+  setTimeout(() => {
+    if (bvStep < bvQuestions.length) {
+      bvAppend('ai', bvAck(v) + '<br><br>' + bvQuestions[bvStep]);
+      bvProgress();
+    } else {
+      bvAppend('ai', 'ありがとうございます。お話から、大切にされている価値観が見えてきました。下の候補から選んで「＋ 追加」してください。文言は自由に直せます。');
+      bvProgress();
+      bvBuildCandidates();
+    }
+  }, 450);
+}
+function bvDetect() {
+  const text = bvAnswers.join(' ');
+  const hits = bvValueMap.filter(m => m.keys.some(k => text.indexOf(k) !== -1));
+  const result = hits.slice();
+  // 3つに満たなければ汎用候補で補完
+  for (const m of bvValueMap) {
+    if (result.length >= 3) break;
+    if (result.indexOf(m) === -1) result.push(m);
+  }
+  return result.slice(0, 5);
+}
+function bvBuildCandidates() {
+  const cands = bvDetect();
+  const wrap = document.getElementById('bv-candidates-wrap');
+  const box = document.getElementById('bv-candidates');
+  if (!wrap || !box) return;
+  wrap.style.display = 'block';
+  box.innerHTML = '';
+  cands.forEach(c => {
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid #c8c4f4;border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface);display:flex;gap:10px;align-items:flex-start';
+    card.innerHTML = '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--purple);margin-bottom:2px">' + c.title + '</div><div style="font-size:12px;color:var(--ink-2);line-height:1.6">' + c.desc + '</div></div>';
+    const btn = document.createElement('button');
+    btn.textContent = '＋ 追加';
+    btn.style.cssText = 'flex-shrink:0;font-size:11px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--purple);background:var(--purple);color:#fff;cursor:pointer;font-family:inherit';
+    btn.addEventListener('click', () => {
+      addValue(c.title, c.desc, c.ex);
+      btn.textContent = '✓ 追加済み';
+      btn.disabled = true;
+      btn.style.background = 'var(--ink-4)';
+      btn.style.borderColor = 'var(--ink-4)';
+      btn.style.cursor = 'default';
+    });
+    card.appendChild(btn);
+    box.appendChild(card);
+  });
+}
+
+function addValue(title, desc, ex) {
+  valueCount++;
+  const list = document.getElementById('value-list');
+  const div = document.createElement('div');
+  div.className = 'policy-item value-item';
+  div.innerHTML = `
+    <div class="item-num">${valueCount}</div>
+    <div class="item-body">
+      <input type="text" class="item-title-input" placeholder="バリューのタイトル（例：常に学び続ける）">
+      <textarea style="min-height:52px" placeholder="説明を書いてください"></textarea>
+      <div class="item-sub-label">具体例</div>
+      <input type="text" placeholder="例：週1冊の読書、月1回の勉強会参加">
+    </div>
+    <button class="item-remove" onclick="removeItem(this,'value-list')">×</button>
+  `;
+  // AI壁打ちから初期値が渡された場合は反映
+  if (title) div.querySelector('.item-title-input').value = title;
+  if (desc)  div.querySelector('textarea').value = desc;
+  if (ex)    div.querySelectorAll('input')[1].value = ex;
+  list.appendChild(div);
+  div.querySelector('input').focus();
+  if (typeof savePolicyDoc === 'function') savePolicyDoc();
+  toast(title ? '「' + title + '」をバリューに追加しました' : 'バリューを追加しました');
+}
+
+// ── 行動指針追加 ──
+let glCount = 3;
+// ══════════════════════════════════════
+// ── 行動指針を導き出すAI壁打ち ──
+// バリューを「明日から実践できる具体的な行動」に落とすための4つの問いを投げ、
+// 回答の言葉から行動指針の候補（タグ用キーワード付き）を抽出して提案する。
+const bgQuestions = [
+  'バリューを体現している人は、<strong>具体的に毎日どんな行動</strong>をしていますか？', // 1問目はHTMLに記載済み
+  '新しく入った社員に、<strong>最初に必ず教える「うちのやり方」</strong>は？',
+  '「これをやれば間違いない」という<strong>勝ちパターンの行動</strong>はありますか？',
+  '逆に、<strong>絶対にやってはいけない行動</strong>は？（その裏返しがルールになります）'
+];
+let bgStep = 0;
+const bgAnswers = [];
+
+// キーワード → 行動指針候補（title / 具体的行動 / タグ用キーワード）
+const bgGuideMap = [
+  { keys:['客','顧客','お客','現場','訪問','聞く','声','ニーズ'], title:'お客様の声を起点に動く', desc:'まずお客様に会い、話を聞く。会議よりも現場を優先する。', kw:'顧客第一・顧客訪問・お客様の声' },
+  { keys:['試','小さく','まず','失敗','振り返','検証','仮説','スモール'], title:'小さく試して、早く学ぶ', desc:'完璧を求めず、まず動く。結果をチームで振り返り次に活かす。', kw:'改善継続・試行錯誤・振り返り' },
+  { keys:['チーム','仲間','助け','相談','共有','協力','連携','抱え込'], title:'チームで助け合う', desc:'困ったら一人で抱えず声をかける。手が空いたら仲間を手伝う。', kw:'チーム協働・相互支援・助け合い' },
+  { keys:['約束','期限','正直','報告','連絡','守','報連相','締切'], title:'約束を守り、正直に伝える', desc:'期限と約束を守る。できない時は早めに正直に共有する。', kw:'誠実・約束遵守・報連相' },
+  { keys:['数字','事実','データ','根拠','定量','ファクト','計測'], title:'数字と事実で語る', desc:'感覚ではなく数字・事実にもとづいて判断し、説明する。', kw:'データ・事実ベース・定量' },
+  { keys:['早','速','即','すぐ','スピード','即レス','24','返信'], title:'即レス・即行動', desc:'連絡は24時間以内に一次返信。迷ったらまず一歩動く。', kw:'スピード・即対応・行動' },
+  { keys:['学','勉強','知識','成長','インプット','読書','勉強会'], title:'学び続けて共有する', desc:'週1で新しい知識を取り入れ、学びをチームに共有する。', kw:'学習・自己成長・ナレッジ共有' },
+  { keys:['丁寧','品質','確認','ミス','チェック','正確','品'], title:'ひと手間の確認を惜しまない', desc:'提出前に必ず見直す。小さなミスを未然に防ぐ確認を習慣にする。', kw:'品質・ダブルチェック・丁寧' }
+];
+
+function bgAppend(role, html) {
+  const box = document.getElementById('bg-messages');
+  if (!box) return;
+  const d = document.createElement('div');
+  if (role === 'user') {
+    d.style.cssText = 'align-self:flex-end;max-width:88%;padding:10px 13px;border-radius:var(--radius) 0 var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--owner-md);color:#fff';
+  } else {
+    d.style.cssText = 'max-width:88%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)';
+  }
+  d.innerHTML = html;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function bgProgress() {
+  const p = document.getElementById('bg-progress');
+  if (!p) return;
+  p.textContent = bgStep < bgQuestions.length ? ('問い ' + (bgStep + 1) + ' / ' + bgQuestions.length) : '候補が出ました ✦';
+}
+function bgAck(v) {
+  const s = v.length > 20 ? v.slice(0, 20) + '…' : v;
+  return 'いいですね、「' + s + '」。それは日々の行動として言葉にできそうです。';
+}
+function bgSend() {
+  const inp = document.getElementById('bg-ai-input');
+  const v = inp.value.trim();
+  if (!v) return;
+  if (bgStep >= bgQuestions.length) {
+    bgAppend('user', v); inp.value = '';
+    setTimeout(() => bgAppend('ai', 'ありがとうございます。その行動も踏まえ、下の候補から近いものを選んでみてください。'), 400);
+    return;
+  }
+  bgAppend('user', v);
+  inp.value = '';
+  bgAnswers.push(v);
+  bgStep++;
+  setTimeout(() => {
+    if (bgStep < bgQuestions.length) {
+      bgAppend('ai', bgAck(v) + '<br><br>' + bgQuestions[bgStep]);
+      bgProgress();
+    } else {
+      bgAppend('ai', 'ありがとうございます。お話から、行動指針の候補をまとめました。下から選んで「＋ 追加」してください。文言は自由に直せます。');
+      bgProgress();
+      bgBuildCandidates();
+    }
+  }, 450);
+}
+function bgDetect() {
+  const text = bgAnswers.join(' ');
+  const hits = bgGuideMap.filter(m => m.keys.some(k => text.indexOf(k) !== -1));
+  const result = hits.slice();
+  for (const m of bgGuideMap) {
+    if (result.length >= 3) break;
+    if (result.indexOf(m) === -1) result.push(m);
+  }
+  return result.slice(0, 5);
+}
+function bgBuildCandidates() {
+  const cands = bgDetect();
+  const wrap = document.getElementById('bg-candidates-wrap');
+  const box = document.getElementById('bg-candidates');
+  if (!wrap || !box) return;
+  wrap.style.display = 'block';
+  box.innerHTML = '';
+  cands.forEach(c => {
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid #c8c4f4;border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface);display:flex;gap:10px;align-items:flex-start';
+    card.innerHTML = '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--purple);margin-bottom:2px">' + c.title + '</div><div style="font-size:12px;color:var(--ink-2);line-height:1.6;margin-bottom:4px">' + c.desc + '</div><div style="font-size:11px;color:var(--ink-3)">🏷 ' + c.kw + '</div></div>';
+    const btn = document.createElement('button');
+    btn.textContent = '＋ 追加';
+    btn.style.cssText = 'flex-shrink:0;font-size:11px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--purple);background:var(--purple);color:#fff;cursor:pointer;font-family:inherit';
+    btn.addEventListener('click', () => {
+      addGuideline(c.title, c.desc, c.kw);
+      btn.textContent = '✓ 追加済み';
+      btn.disabled = true;
+      btn.style.background = 'var(--ink-4)';
+      btn.style.borderColor = 'var(--ink-4)';
+      btn.style.cursor = 'default';
+    });
+    card.appendChild(btn);
+    box.appendChild(card);
+  });
+}
+
+function addGuideline(title, desc, keywords) {
+  glCount++;
+  const list = document.getElementById('guideline-list');
+  const div = document.createElement('div');
+  div.className = 'policy-item';
+  div.innerHTML = `
+    <div class="item-num">${glCount}</div>
+    <div class="item-body">
+      <input type="text" class="item-title-input" placeholder="行動指針のタイトル（例：情報をオープンにする）">
+      <textarea style="min-height:48px" placeholder="具体的な行動を書いてください"></textarea>
+      <div class="item-sub-label">AIタグ用キーワード</div>
+      <input type="text" placeholder="例：情報共有・透明性・オープン">
+    </div>
+    <button class="item-remove" onclick="removeItem(this,'guideline-list')">×</button>
+  `;
+  // AI壁打ちから初期値が渡された場合は反映
+  if (title)    div.querySelector('.item-title-input').value = title;
+  if (desc)     div.querySelector('textarea').value = desc;
+  if (keywords) div.querySelectorAll('input')[1].value = keywords;
+  list.appendChild(div);
+  div.querySelector('input').focus();
+  if (typeof savePolicyDoc === 'function') savePolicyDoc();
+  toast(title ? '「' + title + '」を行動指針に追加しました' : '行動指針を追加しました');
+}
+
+// ── アイテム削除 ──
+function removeItem(btn, listId) {
+  if (document.querySelectorAll('#' + listId + ' .policy-item').length <= 1) {
+    toast('最低1つは必要です');
+    return;
+  }
+  btn.closest('.policy-item').remove();
+  // 番号を振り直す
+  document.querySelectorAll('#' + listId + ' .item-num').forEach((el, i) => {
+    el.textContent = i + 1;
+  });
+  toast('削除しました');
+}
+
+// ── キーワードタグ ──
+function addTag(e, input) {
+  if (e.key !== 'Enter') return;
+  const val = input.value.trim();
+  if (!val) return;
+  const wrap = input.closest('.keyword-wrap');
+  const tag = document.createElement('span');
+  tag.className = 'kw-tag';
+  tag.innerHTML = `${val} <button onclick="removeTag(this)">×</button>`;
+  wrap.insertBefore(tag, input);
+  input.value = '';
+  toast('「' + val + '」を追加しました');
+}
+function removeTag(btn) {
+  btn.closest('.kw-tag').remove();
+  toast('キーワードを削除しました');
+}
+
+// ── ヒント表示 ──
+function toggleHint(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+
+// ── AIサジェスト ──
+function generateAI() {
+  const btn = event.target;
+  btn.textContent = '✦ 生成中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = '✦ AIに提案してもらう';
+    btn.disabled = false;
+    document.getElementById('ai-suggest').style.display = 'flex';
+    toast('AIが志の下書きを提案しました ✨');
+  }, 1600);
+}
+
+// ── ライフラインキャンバス ──
+function drawLifeline() {
+  const canvas = document.getElementById('ll-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+  // グリッド
+  ctx.strokeStyle = '#e2dfd6'; ctx.lineWidth = .8;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+  ctx.setLineDash([]);
+  // ライン
+  const pts = [[0,.7],[.16,.45],[.33,.18],[.5,.78],[.6,.86],[.72,.24],[.85,.16],[1,.13]];
+  ctx.strokeStyle = '#1a8060'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  pts.forEach(([x,y], i) => {
+    const px = x * W, py = y * H;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+  // ポイント
+  const highlights = [2, 3, 5, 6];
+  const colors = ['#1a8060','#1a8060','#b83232','#b83232','#1a8060','#1a8060','#1a8060','#1a8060'];
+  pts.forEach(([x,y], i) => {
+    if (!highlights.includes(i)) return;
+    ctx.fillStyle = colors[i];
+    ctx.beginPath();
+    ctx.arc(x * W, y * H, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath();
+    ctx.arc(x * W, y * H, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+window.addEventListener('load', drawLifeline);
+window.addEventListener('resize', drawLifeline);
+
+function addEvent() {
+  toast('出来事を追加しました（クリックで詳細入力）');
+}
+
+// ── モバイルサイドバー ──
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const btn = document.getElementById('sidebar-toggle');
+  sb.classList.toggle('open');
+  btn.textContent = sb.classList.contains('open')
+    ? '📋 セクション一覧を閉じる ▴'
+    : '📋 セクション一覧を見る ▾';
+}
+
+// ── 公開モーダル ──
+function openPublish() {
+  document.getElementById('modal-publish').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modal-publish').classList.remove('show');
+}
+// 公開スナップショットを作る（社員が読む「指針書を読む」ページ用の意味的データ）
+function buildPublishSnapshot() {
+  const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const list = containerId => {
+    const items = [];
+    const c = document.getElementById(containerId);
+    if (c) c.querySelectorAll('.policy-item').forEach(item => {
+      const t = item.querySelector('.item-title-input');
+      const d = item.querySelector('textarea');
+      const title = t ? t.value.trim() : '';
+      const desc = d ? d.value.trim() : '';
+      if (title || desc) items.push({ title, desc });
+    });
+    return items;
+  };
+  return {
+    aspiration: val('aspiration-text'),
+    philosophy: val('rinen-text'),
+    vision: val('v-vision-final'),
+    mission: val('mission-text'),
+    values: list('value-list'),
+    guidelines: list('guideline-list'),
+    policy: val('p-policy-final'),
+    strategy: val('s-strategy-final'),
+    publishedAt: '2024年8月9日（金）' // デモ用の公開日（本番は new Date() 等に）
+  };
+}
+
+// プレビュー：公開せず、現在の下書きを「指針書を読む」ページで確認する
+function previewPolicy() {
+  savePolicyDoc();
+  HoshinStore.set('policyPreview', buildPublishSnapshot());
+  location.href = '13_policy_view.html?preview=1';
+}
+
+function doPublish() {
+  closeModal();
+  savePolicyDoc(); // 下書きも保存
+  // 公開スナップショットを保存 → 社員の「指針書を読む」ページ(13)に反映される
+  HoshinStore.set('policyPublished', buildPublishSnapshot());
+  // 全ナビをdoneに
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.add('done'));
+  updateProgress();
+  toast('指針書を全社に公開しました 🎉');
+  setTimeout(() => { location.href = '13_policy_view.html'; }, 900);
+}
+
+// ── 自動保存演出 ──
+let saveTimer;
+document.addEventListener('input', () => {
+  const s = document.getElementById('save-status');
+  s.textContent = '💾 保存中...';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    savePolicyDoc();
+    s.textContent = '💾 自動保存しました';
+  }, 1200);
+});
+
+// ── トースト ──
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+
+// ── ビジョン: タブ切り替え ──
+function switchVisionTab(tab) {
+  ['asis','tobe','ai','summary'].forEach(t => {
+    document.getElementById('vpane-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('vtab-' + t);
+    if (btn) {
+      btn.style.background = t === tab ? 'var(--owner-lt)' : 'none';
+      btn.style.color = t === tab ? 'var(--owner)' : 'var(--ink-3)';
+    }
+  });
+}
+
+// ── ビジョン: As is 入力イベント ──
+let vAsisTriggered = false;
+function vAsisInput() {
+  const val = document.getElementById('v-asis-main').value.trim();
+  if (val.length > 15 && !vAsisTriggered) {
+    vAsisTriggered = true;
+    setTimeout(() => {
+      vAddMsg('現状を書いてくれましたね。一つ確認させてください。<br><br><strong>今の会社の状態を一言で表すと、何ですか？</strong><br><br>「頑張っているのに報われない」「成長しているのに不安」「いい会社なのに伝わらない」<br>どれかに近いですか？', 'ai');
+    }, 700);
+  }
+}
+
+// ── ビジョン: To be 入力イベント ──
+let vTobeTriggered = false;
+function vTobeInput() {
+  const val = document.getElementById('v-tobe-main').value.trim();
+  if (val.length > 15 && !vTobeTriggered) {
+    vTobeTriggered = true;
+  }
+}
+
+// ── ビジョン: AI対話開始 ──
+let vAiStarted = false;
+function startAiSession() {
+  if (vAiStarted) return;
+  vAiStarted = true;
+  const asis = document.getElementById('v-asis-main').value.trim();
+  const tobe = document.getElementById('v-tobe-main').value.trim();
+  if (asis || tobe) {
+    setTimeout(() => {
+      vAddMsg('As is と To be を読みました。<br><br>大きなギャップが見えます。では一つ聞かせてください。<br><br><strong>「ありたい姿」が実現したとき、社員の日常の何が変わっていますか？</strong><br><br>朝礼の雰囲気？会議での発言？お客様への対応？退職率？<br>具体的な場面を想像してみてください。', 'ai');
+      setTimeout(() => showVGap(), 1500);
+    }, 800);
+  }
+}
+
+// ── ビジョン: ギャップ表示 ──
+function showVGap() {
+  const sec = document.getElementById('v-gap-section');
+  const items = document.getElementById('v-gap-items');
+  sec.style.display = 'block';
+  items.innerHTML = `
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.65">
+      <span style="color:var(--red);font-size:14px;flex-shrink:0;margin-top:1px">⚠</span>
+      <div><strong>ギャップ①　仕組みの欠如：</strong> 現状「属人的な営業」→ ありたい姿「仕組みで売上が作れる組織」の間に、プロセス設計・ツール整備・人材育成の3層のギャップがあります。</div>
+    </div>
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.65">
+      <span style="color:var(--red);font-size:14px;flex-shrink:0;margin-top:1px">⚠</span>
+      <div><strong>ギャップ②　理念の浸透：</strong> 現状「理念はあるが形骸化」→ ありたい姿「全員が語れる」の間に、日常接点の設計（日報・朝礼・1on1）が欠けています。</div>
+    </div>
+    <div style="background:var(--owner-lt);border:0.5px solid var(--owner-md);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--owner);line-height:1.65">
+      <span style="font-size:14px;flex-shrink:0;margin-top:1px">→</span>
+      <div><strong>優先アクション：</strong> 「理念の浸透」から着手することを推奨します。仕組み化より先に「なぜやるか」が共有されないと、仕組みが形骸化します。このHoshinの日報機能が直接この課題を解決します。</div>
+    </div>`;
+}
+
+// ── ビジョン: AIメッセージ追加 ──
+function vAddMsg(text, type) {
+  const msgs = document.getElementById('v-messages');
+  if (!msgs) return;
+  const d = document.createElement('div');
+  const isAi = type === 'ai';
+  d.style.cssText = `max-width:85%;padding:10px 13px;border-radius:${isAi ? '0 var(--radius) var(--radius) var(--radius)' : 'var(--radius) 0 var(--radius) var(--radius)'};font-size:13px;line-height:1.7;align-self:${isAi ? 'flex-start' : 'flex-end'};background:${isAi ? 'var(--purple-lt)' : 'var(--owner-md)'};border:${isAi ? '1px solid #c8c4f4' : 'none'};color:${isAi ? 'var(--ink)' : '#fff'}`;
+  d.innerHTML = text;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── ビジョン: AI送信 ──
+const vAiResponses = {
+  asis:    ['現状を書いてくれましたね。<br><br><strong>その課題、いつ頃から気づいていましたか？</strong><br><br>気づいていても動けなかった理由は何だったか、振り返ってみてください。そこに「本当の課題」が隠れていることが多いです。'],
+  tobe:    ['「ありたい姿」をもっと具体化しましょう。<br><br><strong>その姿が実現している会社を訪問したとき、あなたは何を見て「ここだ」と感じますか？</strong><br><br>受付の雰囲気？社員の表情？会議室の様子？<br>五感で想像できるほど、ビジョンは現実に近づきます。'],
+  gap:     ['As is と To be を比べると、<strong>3つのギャップ</strong>が見えます。<br><br>① 「仕組みがない現状」→「仕組みで動く組織」<br>② 「理念が浸透していない」→「全員が語れる」<br>③ 「属人的な営業」→「再現性のある成長」<br><br><strong>どれを最初に解決したいですか？</strong>'],
+  oneline: ['入力内容から、こんなビジョン文を提案します：<br><br><strong>「2030年までに、社員一人ひとりが誇りを持って語れる会社を作り、業界で最も信頼される企業になる。」</strong><br><br>これはあくまで下書きです。どこか「違う」と感じる部分はありますか？'],
+  rephrase:['「社員に伝わりやすい」言葉に変えてみます：<br><br><strong>Before：</strong>「業界No.1の顧客満足度を誇る企業」<br><strong>After：</strong>「お客様が友達に自慢したくなる会社」<br><br>ビジョンは難しい言葉より、<strong>社員が明日から使える言葉</strong>の方が浸透します。'],
+  default: ['なるほど。少し深掘りさせてください。<br><br><strong>それは「会社として」の課題ですか？それとも「あなた個人として」の課題ですか？</strong><br><br>経営者として感じることと、一人の人間として感じることを分けて考えると、ビジョンの輪郭がはっきりしてきます。'],
+};
+
+let vMsgCount = 0;
+function vSendMsg() {
+  const inp = document.getElementById('v-ai-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  vAddMsg(val, 'user');
+  inp.value = '';
+  const t = vShowThinking();
+  setTimeout(() => {
+    t.remove();
+    const r = vGetResponse(val);
+    vAddMsg(r, 'ai');
+    vMsgCount++;
+  }, 1200 + Math.random() * 600);
+}
+
+function vSendQuick(text) {
+  document.getElementById('v-ai-input').value = text;
+  vSendMsg();
+}
+
+function vShowThinking() {
+  const msgs = document.getElementById('v-messages');
+  const d = document.createElement('div');
+  d.style.cssText = 'max-width:85%;padding:9px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:12px;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--purple);display:flex;align-items:center;gap:6px';
+  d.innerHTML = '✦ 考えています<span style="display:inline-flex;gap:3px;margin-left:4px"><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s infinite;display:inline-block"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s .2s infinite;display:inline-block"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s .4s infinite;display:inline-block"></span></span>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  if (!document.getElementById('vdot-style')) {
+    const s = document.createElement('style');
+    s.id = 'vdot-style';
+    s.textContent = '@keyframes vdot{0%,80%,100%{opacity:.25;transform:scale(1)}40%{opacity:1;transform:scale(1.3)}}';
+    document.head.appendChild(s);
+  }
+  return d;
+}
+
+function vGetResponse(input) {
+  const l = input.toLowerCase();
+  if (l.includes('as is') || l.includes('asis') || l.includes('現状') || l.includes('深掘り')) return vAiResponses.asis[0];
+  if (l.includes('to be') || l.includes('tobe') || l.includes('具体') || l.includes('ありたい')) return vAiResponses.tobe[0];
+  if (l.includes('ギャップ') || l.includes('gap') || l.includes('分析')) return vAiResponses.gap[0];
+  if (l.includes('一文') || l.includes('まとめ') || l.includes('ビジョン文')) return vAiResponses.oneline[0];
+  if (l.includes('言い換え') || l.includes('伝わる')) return vAiResponses.rephrase[0];
+  return vAiResponses.default[0];
+}
+
+// ── ビジョン: まとめ生成 ──
+function buildSummary() {
+  const asis = document.getElementById('v-asis-main').value.trim() || '（未入力）';
+  const tobe = document.getElementById('v-tobe-main').value.trim() || '（未入力）';
+  document.getElementById('v-summary-asis').textContent = asis;
+  document.getElementById('v-summary-tobe').textContent = tobe;
+  document.getElementById('v-summary-gap').innerHTML = `
+    <strong>優先①：</strong>理念浸透（日報×指針の連動）<br>
+    <strong>優先②：</strong>仕組み化（営業プロセスの標準化）<br>
+    <strong>優先③：</strong>数値化（KGI/KPIの設定）`;
+  const year = new Date().getFullYear() + 5;
+  document.getElementById('v-vision-final').value =
+    `${year}年までに、社員一人ひとりが誇りを持って語れる会社を作り、業界で最も信頼される企業になる。`;
+}
+
+// ── ビジョン: 保存 ──
+function saveVision() {
+  const el = document.getElementById('nav-3');
+  if (el) el.classList.add('done');
+  updateProgress();
+  toast('ビジョン（As is / To be）を保存しました ✓');
+  showSection(4);
+}
+
+// ══════════════════════════════════════
+// ── 使命（ミッション）: 6ステップ ──
+const missionTabs = ['who', 'what', 'how', 'why', 'ai', 'select'];
+function switchMissionTab(tab) {
+  missionTabs.forEach(t => {
+    const pane = document.getElementById('mpane-' + t);
+    if (pane) pane.style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('mtab-' + t);
+    if (btn) {
+      btn.style.background = t === tab ? 'var(--owner-lt)' : 'none';
+      btn.style.color = t === tab ? 'var(--owner)' : 'var(--ink-3)';
+    }
+  });
+  if (tab === 'select') mBuildCandidates();
+}
+function mVal(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+// AI壁打ち（演出）
+function mStartAi() { /* 初期メッセージはHTML側に用意済み */ }
+function mAppend(role, html) {
+  const box = document.getElementById('m-messages');
+  if (!box) return;
+  const d = document.createElement('div');
+  if (role === 'user') {
+    d.style.cssText = 'align-self:flex-end;max-width:85%;padding:10px 13px;border-radius:var(--radius) 0 var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--owner-md);color:#fff';
+  } else {
+    d.style.cssText = 'max-width:85%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)';
+  }
+  d.innerHTML = html;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function mReply(q) {
+  const who = mVal('m-who'), what = mVal('m-what'), why = mVal('m-why');
+  if (q.indexOf('具体的') !== -1 && q.indexOf('対象') !== -1) {
+    return '「' + (who || '対象') + '」を、業種・規模・役職まで一段絞ると刺さります。例えば「特に指針が形骸化しがちな“従業員30〜100名”の成長期の会社」のように。';
+  }
+  if (q.indexOf('提供価値') !== -1 || q.indexOf('言い換え') !== -1) {
+    return '「' + (what || '価値') + '」を“相手に起きる変化”で言い換えると強くなります。例：「社員が自分の言葉で会社の指針を語れるようになる」。';
+  }
+  if (q.indexOf('なぜ') !== -1 || q.indexOf('深掘り') !== -1) {
+    return 'その想い（' + (why || '—') + '）の裏にある原体験を一言そえると、ミッションが自分ごとになります。過去に「働く意味」を強く感じた瞬間はありますか？';
+  }
+  if (q.indexOf('短く') !== -1 || q.indexOf('一文') !== -1 || q.indexOf('候補') !== -1) {
+    return '「⑥ 選出」タブに、①〜④から作った候補文を3つ用意しました。選んでから自分の言葉で微調整してください。';
+  }
+  return '良い視点です。「誰に・何を・どうやって・なぜ」のうち、いま一番言葉が弱いのはどれだと思いますか？そこを一緒に磨きましょう。';
+}
+function mSendMsg() {
+  const inp = document.getElementById('m-ai-input');
+  const v = inp.value.trim();
+  if (!v) return;
+  mAppend('user', v);
+  inp.value = '';
+  setTimeout(() => mAppend('ai', mReply(v)), 450);
+}
+function mSendQuick(t) {
+  const inp = document.getElementById('m-ai-input');
+  inp.value = t;
+  mSendMsg();
+}
+
+// ミッション候補の生成・選出
+function mBuildCandidates() {
+  const who = mVal('m-who') || 'お客様';
+  const what = mVal('m-what') || '価値';
+  const how = mVal('m-how');
+  const why = mVal('m-why');
+  // ①〜④のふりかえりを反映
+  const ref = { who: 'm-ref-who', what: 'm-ref-what', how: 'm-ref-how', why: 'm-ref-why' };
+  const setRef = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v || '（未入力）'; };
+  setRef(ref.who, who); setRef(ref.what, what); setRef(ref.how, mVal('m-how')); setRef(ref.why, why);
+
+  const shortWho = who.length > 22 ? who.slice(0, 22) + '…' : who;
+  const candidates = [
+    shortWho + 'に、' + what + 'を届ける。',
+    what + 'を通じて、' + shortWho + 'の課題を解決する。',
+    (how ? how + 'によって、' : '') + shortWho + 'に' + what + 'を提供し続ける。'
+  ];
+  const box = document.getElementById('m-candidates');
+  if (!box) return;
+  box.innerHTML = '';
+  candidates.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'm-cand';
+    card.style.cssText = 'border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;cursor:pointer;transition:border-color .15s,background .15s;font-size:14px;line-height:1.6;color:var(--ink);background:var(--surface)';
+    card.innerHTML = '<span style="font-size:11px;font-weight:700;color:var(--purple);margin-right:6px">候補' + (i + 1) + '</span>' + c;
+    card.addEventListener('click', () => mSelectCandidate(card, c));
+    box.appendChild(card);
+  });
+}
+function mSelectCandidate(card, text) {
+  document.querySelectorAll('#m-candidates .m-cand').forEach(x => {
+    x.style.borderColor = 'var(--border)';
+    x.style.background = 'var(--surface)';
+  });
+  card.style.borderColor = 'var(--owner-md)';
+  card.style.background = 'var(--owner-lt)';
+  const ta = document.getElementById('mission-text');
+  if (ta) ta.value = text;
+  if (typeof savePolicyDoc === 'function') savePolicyDoc();
+  toast('ミッション候補を選びました。自分の言葉で微調整できます ✍️');
+}
+function saveMission() {
+  const el = document.getElementById('nav-4');
+  if (el) el.classList.add('done');
+  updateProgress();
+  if (typeof savePolicyDoc === 'function') savePolicyDoc();
+  toast('ミッションを保存しました ✓');
+  showSection(5);
+}
+
+// ══════════════════════════════════════
+// ── 方針: タブ切り替え ──
+function switchPolicyTab(tab) {
+  ['asis','tobe','ai','summary'].forEach(t => {
+    document.getElementById('ppane-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('ptab-' + t);
+    if (btn) {
+      btn.style.background = t === tab ? 'var(--owner-lt)' : 'none';
+      btn.style.color = t === tab ? 'var(--owner)' : 'var(--ink-3)';
+    }
+  });
+}
+
+// ── 方針: As is 入力イベント ──
+let pAsisTriggered = false;
+function pAsisInput() {
+  const val = document.getElementById('p-asis-main').value.trim();
+  if (val.length > 15 && !pAsisTriggered) {
+    pAsisTriggered = true;
+    setTimeout(() => {
+      pAddMsg('現状を書いてくれましたね。一つ確認させてください。<br><br><strong>今、一番時間を使っていることは、本当に重要なことですか？</strong><br><br>忙しさと重要さは別物です。ここを分けて考えると、方針の輪郭が見えてきます。', 'ai');
+    }, 700);
+  }
+}
+
+// ── 方針: To be 入力イベント ──
+let pTobeTriggered = false;
+function pTobeInput() {
+  const val = document.getElementById('p-tobe-main').value.trim();
+  if (val.length > 15 && !pTobeTriggered) {
+    pTobeTriggered = true;
+  }
+}
+
+// ── 方針: AI対話開始 ──
+let pAiStarted = false;
+function startPolicyAiSession() {
+  if (pAiStarted) return;
+  pAiStarted = true;
+  const asis = document.getElementById('p-asis-main').value.trim();
+  const tobe = document.getElementById('p-tobe-main').value.trim();
+  if (asis || tobe) {
+    setTimeout(() => {
+      pAddMsg('As is と To be を読みました。<br><br>重視したいことがいくつか見えてきました。では一つ聞かせてください。<br><br><strong>その方針を実行すると、現場の日々の判断は具体的にどう変わりますか？</strong><br><br>優先順位の付け方、断る基準、時間の使い方など、具体的な場面を想像してみてください。', 'ai');
+      setTimeout(() => showPGap(), 1500);
+    }, 800);
+  }
+}
+
+// ── 方針: ギャップ表示 ──
+function showPGap() {
+  const sec = document.getElementById('p-gap-section');
+  const items = document.getElementById('p-gap-items');
+  sec.style.display = 'block';
+  items.innerHTML = `
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.65">
+      <span style="color:var(--red);font-size:14px;flex-shrink:0;margin-top:1px">⚠</span>
+      <div><strong>ギャップ①　優先順位の未整理：</strong> 現状「すべてが重要に見える」→ ありたい姿「重視することが絞られている」の間に、判断基準の明文化が欠けています。</div>
+    </div>
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.65">
+      <span style="color:var(--red);font-size:14px;flex-shrink:0;margin-top:1px">⚠</span>
+      <div><strong>ギャップ②　浸透の弱さ：</strong> 現状「方針が経営層止まり」→ ありたい姿「現場の判断に反映される」の間に、日常業務との接続が欠けています。</div>
+    </div>
+    <div style="background:var(--owner-lt);border:0.5px solid var(--owner-md);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--owner);line-height:1.65">
+      <span style="font-size:14px;flex-shrink:0;margin-top:1px">→</span>
+      <div><strong>優先アクション：</strong> まず「今年度やらないこと」を1つ決めて全社に共有することを推奨します。何をやるかより、何をやらないかの方が方針は伝わりやすいです。</div>
+    </div>`;
+}
+
+// ── 方針: AIメッセージ追加 ──
+function pAddMsg(text, type) {
+  const msgs = document.getElementById('p-messages');
+  if (!msgs) return;
+  const d = document.createElement('div');
+  const isAi = type === 'ai';
+  d.style.cssText = `max-width:85%;padding:10px 13px;border-radius:${isAi ? '0 var(--radius) var(--radius) var(--radius)' : 'var(--radius) 0 var(--radius) var(--radius)'};font-size:13px;line-height:1.7;align-self:${isAi ? 'flex-start' : 'flex-end'};background:${isAi ? 'var(--purple-lt)' : 'var(--owner-md)'};border:${isAi ? '1px solid #c8c4f4' : 'none'};color:${isAi ? 'var(--ink)' : '#fff'}`;
+  d.innerHTML = text;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── 方針: AI送信 ──
+const pAiResponses = {
+  asis:    ['現状を書いてくれましたね。<br><br><strong>その忙しさ、成果に直結していますか？</strong><br><br>直結していないなら、それが「やめるべきこと」の候補です。'],
+  tobe:    ['重視したい方針をもっと具体化しましょう。<br><br><strong>その方針が徹底されている会社では、社員はどんな場面で「らしさ」を発揮していますか？</strong><br><br>具体的な場面を想像できるほど、方針は現場で使えるものになります。'],
+  gap:     ['As is と To be を比べると、<strong>3つのギャップ</strong>が見えます。<br><br>① 「すべてが重要」→「優先順位が明確」<br>② 「方針が経営層止まり」→「現場の判断に反映」<br>③ 「場当たり対応」→「一貫した意思決定」<br><br><strong>どれを最初に解決したいですか？</strong>'],
+  oneline: ['入力内容から、こんな方針文を提案します：<br><br><strong>「今年度は、既存のお客様との関係を深めることを最優先し、新しいことへの投資はそのための時間を生み出してから行う。」</strong><br><br>これはあくまで下書きです。どこか「違う」と感じる部分はありますか？'],
+  rephrase:['「社員に伝わりやすい」言葉に変えてみます：<br><br><strong>Before：</strong>「既存顧客のLTV最大化を最優先する」<br><strong>After：</strong>「新しいお客様より、今のお客様をもっと大事にする1年にする」<br><br>方針は難しい言葉より、<strong>現場が明日から判断に使える言葉</strong>の方が浸透します。'],
+  default: ['なるほど。少し深掘りさせてください。<br><br><strong>それは「今年度だけ」の話ですか？それとも「これからずっと」続く方針ですか？</strong><br><br>期間を分けて考えると、方針の輪郭がはっきりしてきます。'],
+};
+
+let pMsgCount = 0;
+function pSendMsg() {
+  const inp = document.getElementById('p-ai-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  pAddMsg(val, 'user');
+  inp.value = '';
+  const t = pShowThinking();
+  setTimeout(() => {
+    t.remove();
+    const r = pGetResponse(val);
+    pAddMsg(r, 'ai');
+    pMsgCount++;
+  }, 1200 + Math.random() * 600);
+}
+
+function pSendQuick(text) {
+  document.getElementById('p-ai-input').value = text;
+  pSendMsg();
+}
+
+function pShowThinking() {
+  const msgs = document.getElementById('p-messages');
+  const d = document.createElement('div');
+  d.style.cssText = 'max-width:85%;padding:9px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:12px;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--purple);display:flex;align-items:center;gap:6px';
+  d.innerHTML = '✦ 考えています<span style="display:inline-flex;gap:3px;margin-left:4px"><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s infinite;display:inline-block"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s .2s infinite;display:inline-block"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s .4s infinite;display:inline-block"></span></span>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  if (!document.getElementById('vdot-style')) {
+    const s = document.createElement('style');
+    s.id = 'vdot-style';
+    s.textContent = '@keyframes vdot{0%,80%,100%{opacity:.25;transform:scale(1)}40%{opacity:1;transform:scale(1.3)}}';
+    document.head.appendChild(s);
+  }
+  return d;
+}
+
+function pGetResponse(input) {
+  const l = input.toLowerCase();
+  if (l.includes('as is') || l.includes('asis') || l.includes('現状') || l.includes('深掘り')) return pAiResponses.asis[0];
+  if (l.includes('to be') || l.includes('tobe') || l.includes('具体') || l.includes('重視')) return pAiResponses.tobe[0];
+  if (l.includes('ギャップ') || l.includes('gap') || l.includes('分析')) return pAiResponses.gap[0];
+  if (l.includes('一文') || l.includes('まとめ') || l.includes('方針文')) return pAiResponses.oneline[0];
+  if (l.includes('言い換え') || l.includes('伝わる')) return pAiResponses.rephrase[0];
+  return pAiResponses.default[0];
+}
+
+// ── 方針: まとめ生成 ──
+function buildPolicySummary() {
+  const asis = document.getElementById('p-asis-main').value.trim() || '（未入力）';
+  const tobe = document.getElementById('p-tobe-main').value.trim() || '（未入力）';
+  document.getElementById('p-summary-asis').textContent = asis;
+  document.getElementById('p-summary-tobe').textContent = tobe;
+  document.getElementById('p-summary-gap').innerHTML = `
+    <strong>優先①：</strong>判断基準の明文化（何をやり、何をやらないか）<br>
+    <strong>優先②：</strong>現場への浸透（朝礼・1on1での共有）<br>
+    <strong>優先③：</strong>定期的な振り返り（四半期ごとの方針レビュー）`;
+  document.getElementById('p-policy-final').value =
+    '今年度は、既存のお客様との関係を深めることを最優先し、新しいことへの投資はそのための時間を生み出してから行う。';
+}
+
+// ── 方針: 保存 ──
+function savePolicy() {
+  const el = document.getElementById('nav-8');
+  if (el) el.classList.add('done');
+  updateProgress();
+  toast('方針（As is / To be）を保存しました ✓');
+  showSection(9);
+}
+
+// ══════════════════════════════════════
+// ── 方針を導き出すAI壁打ち（選択と集中） ──
+// 「今年の重点をどこに絞るか」を4つの問いで引き出し、重点方針の候補を提案。
+// 候補は複数選択でき、選んだ方針は p-policy-final（まとめ）に反映される。
+const bpQuestions = [
+  '今年度、<strong>最も解決すべき課題</strong>は何ですか？', // 1問目はHTMLに記載済み
+  '限られた資源（人・時間・お金）を<strong>1つに集中する</strong>なら、どこですか？',
+  '去年と変える点は？ そのために<strong>「何をやめますか」</strong>？',
+  '社員に「今年はこれを最優先」と<strong>一言で言う</strong>なら？'
+];
+let bpStep = 0;
+const bpAnswers = [];
+const bpSelected = []; // 選ばれた方針タイトル
+
+// キーワード → 重点方針の候補（title / 具体的な方針文）
+const bpPolicyMap = [
+  { keys:['既存','継続','解約','リピート','LTV','ファン','深','関係'], title:'既存顧客との関係を深める', desc:'新規獲得より、既存顧客のLTV最大化を今年の最優先に置く。' },
+  { keys:['新規','開拓','集客','獲得','売上','販路','マーケ'], title:'新規顧客の開拓に注力する', desc:'新しい顧客層・販路の開拓に資源を集中し、売上の柱を増やす。' },
+  { keys:['人','採用','育成','定着','離職','教育','組織','マネジ'], title:'人材の採用・育成を最優先する', desc:'採用と育成の仕組みづくりに投資し、組織の土台を固める。' },
+  { keys:['DX','IT','デジタル','システム','効率','自動','仕組み','業務'], title:'業務のDX・仕組み化を進める', desc:'属人化を減らし、デジタル化と仕組み化で生産性を上げる。' },
+  { keys:['品質','満足','CS','サポート','クレーム','対応'], title:'品質・顧客満足の向上に集中する', desc:'品質とサポートを磨き込み、顧客満足を全社の最優先指標にする。' },
+  { keys:['新規事業','新商品','開発','イノベ','挑戦','柱','多角'], title:'新しい事業・商品の柱を育てる', desc:'次の収益の柱となる新規事業・商品の開発に計画的に投資する。' },
+  { keys:['利益','コスト','収益','財務','無駄','筋肉質','粗利'], title:'利益体質へ転換する', desc:'売上規模より利益率を重視し、コスト構造を見直して筋肉質にする。' },
+  { keys:['指針','理念','浸透','文化','エンゲージ','価値観','ビジョン'], title:'指針浸透・組織文化づくりに投資する', desc:'経営指針を現場に浸透させ、判断のブレない組織文化をつくる。' }
+];
+
+function bpAppend(role, html) {
+  const box = document.getElementById('bp-messages');
+  if (!box) return;
+  const d = document.createElement('div');
+  if (role === 'user') {
+    d.style.cssText = 'align-self:flex-end;max-width:88%;padding:10px 13px;border-radius:var(--radius) 0 var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--owner-md);color:#fff';
+  } else {
+    d.style.cssText = 'max-width:88%;padding:10px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:13px;line-height:1.7;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--ink)';
+  }
+  d.innerHTML = html;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function bpProgress() {
+  const p = document.getElementById('bp-progress');
+  if (!p) return;
+  p.textContent = bpStep < bpQuestions.length ? ('問い ' + (bpStep + 1) + ' / ' + bpQuestions.length) : '候補が出ました ✦';
+}
+function bpAck(v) {
+  const s = v.length > 20 ? v.slice(0, 20) + '…' : v;
+  return 'なるほど、「' + s + '」ですね。重点を絞る大事な材料です。';
+}
+function bpSend() {
+  const inp = document.getElementById('bp-ai-input');
+  const v = inp.value.trim();
+  if (!v) return;
+  if (bpStep >= bpQuestions.length) {
+    bpAppend('user', v); inp.value = '';
+    setTimeout(() => bpAppend('ai', 'ありがとうございます。その視点も踏まえ、下の候補から今年の重点を2〜4個選んでください。'), 400);
+    return;
+  }
+  bpAppend('user', v);
+  inp.value = '';
+  bpAnswers.push(v);
+  bpStep++;
+  setTimeout(() => {
+    if (bpStep < bpQuestions.length) {
+      bpAppend('ai', bpAck(v) + '<br><br>' + bpQuestions[bpStep]);
+      bpProgress();
+    } else {
+      bpAppend('ai', 'ありがとうございます。お話から、今年の重点方針の候補をまとめました。<strong>2〜4個</strong>を目安に選んでください。');
+      bpProgress();
+      bpBuildCandidates();
+    }
+  }, 450);
+}
+function bpDetect() {
+  const text = bpAnswers.join(' ');
+  const hits = bpPolicyMap.filter(m => m.keys.some(k => text.indexOf(k) !== -1));
+  const result = hits.slice();
+  for (const m of bpPolicyMap) {
+    if (result.length >= 4) break;
+    if (result.indexOf(m) === -1) result.push(m);
+  }
+  return result.slice(0, 6);
+}
+function bpBuildCandidates() {
+  const cands = bpDetect();
+  const wrap = document.getElementById('bp-candidates-wrap');
+  const box = document.getElementById('bp-candidates');
+  if (!wrap || !box) return;
+  wrap.style.display = 'block';
+  box.innerHTML = '';
+  cands.forEach(c => {
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid #c8c4f4;border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface);display:flex;gap:10px;align-items:flex-start';
+    card.innerHTML = '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--purple);margin-bottom:2px">' + c.title + '</div><div style="font-size:12px;color:var(--ink-2);line-height:1.6">' + c.desc + '</div></div>';
+    const btn = document.createElement('button');
+    btn.textContent = '＋ 選ぶ';
+    btn.style.cssText = 'flex-shrink:0;font-size:11px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--purple);background:var(--purple);color:#fff;cursor:pointer;font-family:inherit';
+    btn.addEventListener('click', () => bpToggleSelect(c, btn));
+    card.appendChild(btn);
+    box.appendChild(card);
+  });
+}
+function bpToggleSelect(c, btn) {
+  const idx = bpSelected.indexOf(c.title);
+  if (idx === -1) {
+    bpSelected.push(c.title);
+    btn.textContent = '✓ 選択中';
+    btn.style.background = 'var(--owner-md)';
+    btn.style.borderColor = 'var(--owner-md)';
+  } else {
+    bpSelected.splice(idx, 1);
+    btn.textContent = '＋ 選ぶ';
+    btn.style.background = 'var(--purple)';
+    btn.style.borderColor = 'var(--purple)';
+  }
+  bpRenderSelected();
+}
+function bpRenderSelected() {
+  const wrap = document.getElementById('bp-selected-wrap');
+  const list = document.getElementById('bp-selected-list');
+  if (!wrap || !list) return;
+  wrap.style.display = bpSelected.length ? 'block' : 'none';
+  list.innerHTML = bpSelected.map((t, i) => '<div style="font-size:13px;color:var(--ink);font-weight:500">' + (i + 1) + '. ' + t + '</div>').join('');
+  // まとめの方針文（p-policy-final）に反映
+  const final = document.getElementById('p-policy-final');
+  if (final) final.value = bpSelected.map(t => '・' + t).join('\n');
+  if (typeof savePolicyDoc === 'function') savePolicyDoc();
+}
+
+// ══════════════════════════════════════
+// ── 戦略: 08で確定した方針を参照表示 ──
+function getConfirmedPolicyText() {
+  const final = document.getElementById('p-policy-final')?.value.trim();
+  if (final) return final;
+  const tobe = document.getElementById('p-tobe-main')?.value.trim();
+  if (tobe) return tobe;
+  return '';
+}
+function loadPolicyRef() {
+  const ref = document.getElementById('strategy-policy-ref-text');
+  if (!ref) return;
+  const policy = getConfirmedPolicyText();
+  ref.textContent = policy || '方針（08）がまだ保存されていません。先に方針を決めることをおすすめします。';
+}
+
+// ── 戦略: タブ切り替え ──
+function switchStrategyTab(tab) {
+  ['asis','tobe','ai','summary'].forEach(t => {
+    document.getElementById('spane-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('stab-' + t);
+    if (btn) {
+      btn.style.background = t === tab ? 'var(--owner-lt)' : 'none';
+      btn.style.color = t === tab ? 'var(--owner)' : 'var(--ink-3)';
+    }
+  });
+}
+
+// ── 戦略: As is 入力イベント ──
+let sAsisTriggered = false;
+function sAsisInput() {
+  const val = document.getElementById('s-asis-main').value.trim();
+  if (val.length > 15 && !sAsisTriggered) {
+    sAsisTriggered = true;
+    setTimeout(() => {
+      sAddMsg('現状を書いてくれましたね。一つ確認させてください。<br><br><strong>今の勝ち方を、もし競合が完全にコピーしたら、どうなりますか？</strong><br><br>簡単に真似できるなら、それはまだ「戦略」ではなく「やり方」に過ぎないかもしれません。', 'ai');
+    }, 700);
+  }
+}
+
+// ── 戦略: To be 入力イベント ──
+let sTobeTriggered = false;
+function sTobeInput() {
+  const val = document.getElementById('s-tobe-main').value.trim();
+  if (val.length > 15 && !sTobeTriggered) {
+    sTobeTriggered = true;
+  }
+}
+
+// ── 戦略: AI対話開始 ──
+let sAiStarted = false;
+function startStrategyAiSession() {
+  if (sAiStarted) return;
+  sAiStarted = true;
+  const asis = document.getElementById('s-asis-main').value.trim();
+  const tobe = document.getElementById('s-tobe-main').value.trim();
+  const policy = getConfirmedPolicyText();
+  if (asis || tobe) {
+    setTimeout(() => {
+      const policyLine = policy
+        ? `08で確定した方針「<strong>${policy}</strong>」を踏まえて、戦略を深掘りします。<br><br>`
+        : '';
+      sAddMsg(policyLine + 'As is と To be を読みました。競争環境を踏まえると、大きな飛躍が必要そうです。<br><br><strong>その戦略ポジションを取るために、今すぐやめるべき事業・顧客・やり方はありますか？</strong><br><br>戦略は「何をやるか」以上に「何を捨てるか」で決まります。', 'ai');
+      setTimeout(() => showSGap(), 1500);
+    }, 800);
+  }
+}
+
+// ── 戦略: ギャップ表示 ──
+function showSGap() {
+  const sec = document.getElementById('s-gap-section');
+  const items = document.getElementById('s-gap-items');
+  sec.style.display = 'block';
+  items.innerHTML = `
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.65">
+      <span style="color:var(--red);font-size:14px;flex-shrink:0;margin-top:1px">⚠</span>
+      <div><strong>ギャップ①　差別化の欠如：</strong> 現状「価格で比較される」→ ありたい姿「価格以外で選ばれる」の間に、価値の言語化・可視化が欠けています。</div>
+    </div>
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.65">
+      <span style="color:var(--red);font-size:14px;flex-shrink:0;margin-top:1px">⚠</span>
+      <div><strong>ギャップ②　依存リスク：</strong> 現状「大口顧客への依存」→ ありたい姿「分散されたポートフォリオ」の間に、新規セグメント開拓の仕組みが欠けています。</div>
+    </div>
+    <div style="background:var(--owner-lt);border:0.5px solid var(--owner-md);border-radius:var(--radius-sm);padding:9px 12px;display:flex;gap:8px;font-size:12px;color:var(--owner);line-height:1.65">
+      <span style="font-size:14px;flex-shrink:0;margin-top:1px">→</span>
+      <div><strong>優先アクション：</strong> まず「価格以外で選ばれる理由」を1つに絞って言語化することを推奨します。差別化は多くを狙うほどぼやけます。</div>
+    </div>`;
+}
+
+// ── 戦略: AIメッセージ追加 ──
+function sAddMsg(text, type) {
+  const msgs = document.getElementById('s-messages');
+  if (!msgs) return;
+  const d = document.createElement('div');
+  const isAi = type === 'ai';
+  d.style.cssText = `max-width:85%;padding:10px 13px;border-radius:${isAi ? '0 var(--radius) var(--radius) var(--radius)' : 'var(--radius) 0 var(--radius) var(--radius)'};font-size:13px;line-height:1.7;align-self:${isAi ? 'flex-start' : 'flex-end'};background:${isAi ? 'var(--purple-lt)' : 'var(--owner-md)'};border:${isAi ? '1px solid #c8c4f4' : 'none'};color:${isAi ? 'var(--ink)' : '#fff'}`;
+  d.innerHTML = text;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── 戦略: AI送信 ──
+const sAiResponses = {
+  asis:    ['現状を書いてくれましたね。<br><br><strong>その競争環境、なぜ今のポジションに落ち着いているのですか？</strong><br><br>過去の選択の積み重ねを振り返ると、変えるべき前提が見えてきます。'],
+  tobe:    ['戦略ポジションをもっと具体化しましょう。<br><br><strong>そのポジションを取れている会社を1社思い浮かべると、どこが違いますか？</strong><br><br>具体的な比較ができるほど、戦略は実行可能になります。'],
+  gap:     ['As is と To be を比べると、<strong>3つのギャップ</strong>が見えます。<br><br>① 「価格で比較される」→「価格以外で選ばれる」<br>② 「大口顧客に依存」→「分散されたポートフォリオ」<br>③ 「後追いの対応」→「先回りした提案」<br><br><strong>どれを最初に解決したいですか？</strong>'],
+  oneline: ['入力内容から、こんな戦略文を提案します：<br><br><strong>「価格ではなく伴走支援の質で選ばれる会社になり、中小製造業のDX支援というニッチ市場でNo.1のシェアを獲得する。」</strong><br><br>これはあくまで下書きです。どこか「違う」と感じる部分はありますか？'],
+  rephrase:['「社員に伝わりやすい」言葉に変えてみます：<br><br><strong>Before：</strong>「ニッチ市場でNo.1のシェアを獲得する」<br><strong>After：</strong>「小さな市場でいちばん頼られる会社になる」<br><br>戦略は難しい言葉より、<strong>現場が誇りを持って語れる言葉</strong>の方が浸透します。'],
+  default: ['なるほど。少し深掘りさせてください。<br><br><strong>それは「今のお客様」に向けた戦略ですか？それとも「これから獲得したいお客様」に向けた戦略ですか？</strong><br><br>対象を分けて考えると、戦略の輪郭がはっきりしてきます。'],
+};
+
+let sMsgCount = 0;
+function sSendMsg() {
+  const inp = document.getElementById('s-ai-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  sAddMsg(val, 'user');
+  inp.value = '';
+  const t = sShowThinking();
+  setTimeout(() => {
+    t.remove();
+    const r = sGetResponse(val);
+    sAddMsg(r, 'ai');
+    sMsgCount++;
+  }, 1200 + Math.random() * 600);
+}
+
+function sSendQuick(text) {
+  document.getElementById('s-ai-input').value = text;
+  sSendMsg();
+}
+
+function sShowThinking() {
+  const msgs = document.getElementById('s-messages');
+  const d = document.createElement('div');
+  d.style.cssText = 'max-width:85%;padding:9px 13px;border-radius:0 var(--radius) var(--radius) var(--radius);font-size:12px;background:var(--purple-lt);border:1px solid #c8c4f4;color:var(--purple);display:flex;align-items:center;gap:6px';
+  d.innerHTML = '✦ 考えています<span style="display:inline-flex;gap:3px;margin-left:4px"><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s infinite;display:inline-block"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s .2s infinite;display:inline-block"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--purple);animation:vdot 1.2s .4s infinite;display:inline-block"></span></span>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  if (!document.getElementById('vdot-style')) {
+    const s = document.createElement('style');
+    s.id = 'vdot-style';
+    s.textContent = '@keyframes vdot{0%,80%,100%{opacity:.25;transform:scale(1)}40%{opacity:1;transform:scale(1.3)}}';
+    document.head.appendChild(s);
+  }
+  return d;
+}
+
+function sGetResponse(input) {
+  const l = input.toLowerCase();
+  if (l.includes('as is') || l.includes('asis') || l.includes('現状') || l.includes('深掘り')) return sAiResponses.asis[0];
+  if (l.includes('to be') || l.includes('tobe') || l.includes('具体') || l.includes('ポジション')) return sAiResponses.tobe[0];
+  if (l.includes('ギャップ') || l.includes('gap') || l.includes('分析')) return sAiResponses.gap[0];
+  if (l.includes('一文') || l.includes('まとめ') || l.includes('戦略文')) return sAiResponses.oneline[0];
+  if (l.includes('言い換え') || l.includes('伝わる')) return sAiResponses.rephrase[0];
+  return sAiResponses.default[0];
+}
+
+// ── 戦略: まとめ生成 ──
+function buildStrategySummary() {
+  const asis = document.getElementById('s-asis-main').value.trim() || '（未入力）';
+  const tobe = document.getElementById('s-tobe-main').value.trim() || '（未入力）';
+  const policy = getConfirmedPolicyText();
+  document.getElementById('s-summary-asis').textContent = asis;
+  document.getElementById('s-summary-tobe').textContent = tobe;
+  document.getElementById('s-summary-gap').innerHTML = `
+    ${policy ? `<strong>08の方針との整合：</strong>「${policy}」を実現する戦略になっているか確認しましょう。<br>` : ''}
+    <strong>優先①：</strong>差別化ポイントの言語化（価格以外の価値）<br>
+    <strong>優先②：</strong>顧客ポートフォリオの分散（新規セグメント開拓）<br>
+    <strong>優先③：</strong>戦略の現場浸透（営業トークへの落とし込み）`;
+  document.getElementById('s-strategy-final').value =
+    '価格ではなく伴走支援の質で選ばれる会社になり、中小製造業のDX支援というニッチ市場でNo.1のシェアを獲得する。';
+}
+
+// ── 戦略: 保存 ──
+function saveStrategy() {
+  const el = document.getElementById('nav-9');
+  if (el) el.classList.add('done');
+  updateProgress();
+  toast('戦略（As is / To be）を保存しました ✓');
+  openPublish();
+}
+
+</script>
+</body>
+</html>

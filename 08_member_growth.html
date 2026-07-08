@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoshin — 自分の成長記録</title>
+<style>
+:root {
+  --ink:#1e1c18;--ink-2:#4a4740;--ink-3:#8a877e;--ink-4:#c4c1b8;
+  --bg:#faf8f4;--surface:#fff;--border:#e8e4da;
+  --amber:#b06a10;--amber-md:#c07812;--amber-lt:#fef3e2;--amber-btn:#9a5c0a;
+  --green:#2d5a3d;--green-md:#4a8c60;--green-lt:#e8f1eb;
+  --red:#b83232;--red-lt:#fdeaea;
+  --purple:#3d3591;--purple-lt:#eeedfe;
+  --gold:#8a6a1a;--gold-lt:#fdf6e3;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 4px rgba(0,0,0,.07);
+  --shadow-md:0 3px 10px rgba(0,0,0,.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;min-height:100vh;padding-bottom:72px}
+
+/* ── ナビ ── */
+.nav{background:var(--amber-md);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.nav-inner{max-width:720px;margin:0 auto;padding:0 16px;height:52px;display:flex;align-items:center;gap:6px}
+.nav-logo{font-size:17px;font-weight:800;color:#fff;letter-spacing:-.02em;display:flex;align-items:center;gap:7px;margin-right:10px}
+.nav-logo svg{width:19px;height:19px}
+.nav-link{padding:5px 10px;border-radius:var(--radius-sm);font-size:12px;color:rgba(255,255,255,.72);cursor:pointer;transition:background .15s;white-space:nowrap}
+.nav-link:hover{background:rgba(255,255,255,.14)}
+.nav-link.active{background:rgba(255,255,255,.2);color:#fff;font-weight:500}
+.nav-right{margin-left:auto}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.22);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+/* ── ページ ── */
+.page{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+
+/* ── タブ ── */
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:20px;box-shadow:var(--shadow)}
+.tab{flex:1;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;color:var(--ink-3);transition:all .2s;text-align:center;border:none;background:none;font-family:inherit}
+.tab:hover{color:var(--ink-2);background:var(--bg)}
+.tab.active{background:var(--amber-lt);color:var(--amber);font-weight:600}
+
+/* ── カード ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.card-head{padding:13px 15px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.card-title{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:7px}
+.card-badge{display:inline-flex;align-items:center;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.cb-green{background:var(--green-lt);color:var(--green)}
+.cb-amber{background:var(--amber-lt);color:var(--amber)}
+.card-link{font-size:12px;color:var(--amber);cursor:pointer}
+.card-link:hover{text-decoration:underline}
+.card-body{padding:10px 15px 15px}
+
+/* ── スコアヒーロー ── */
+.score-hero{padding:18px;text-align:center}
+.score-ring-wrap{position:relative;width:120px;height:120px;margin:0 auto 12px}
+.score-ring-wrap svg{width:120px;height:120px;transform:rotate(-90deg)}
+.score-ring-bg{stroke:var(--border);fill:none;stroke-width:10}
+.score-ring-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)}
+.score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.score-max{font-size:11px;color:var(--ink-3)}
+.score-label{font-size:12px;color:var(--ink-3);margin-bottom:5px}
+.score-diff{font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:20px}
+.sd-up{background:var(--green-lt);color:var(--green)}
+.sd-down{background:var(--red-lt);color:var(--red)}
+
+/* ── サブ指標 ── */
+.sub-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.sub-metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;box-shadow:var(--shadow);cursor:pointer;transition:border-color .15s}
+.sub-metric:hover{border-color:var(--amber)}
+.sm-label{font-size:10px;color:var(--ink-3);margin-bottom:4px;line-height:1.3}
+.sm-val{font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1;margin-bottom:3px}
+.sm-sub{font-size:10px}
+
+/* ── バー ── */
+.bar-item{margin-bottom:10px}
+.bar-item:last-child{margin-bottom:0}
+.bar-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bar-name{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:5px}
+.bar-pct{font-size:12px;font-weight:600}
+.bar-wrap{height:7px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bar{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.badge-sm{display:inline-flex;font-size:10px;padding:1px 6px;border-radius:20px;font-weight:500}
+.bg{background:var(--green-lt);color:var(--green)}
+.bm{background:var(--gold-lt);color:var(--gold)}
+.br{background:var(--red-lt);color:var(--red);border:1px solid #e5aaaa}
+
+/* ── トレンドグラフ（簡易） ── */
+.trend-chart{position:relative;height:80px;background:var(--bg);border-radius:var(--radius-sm);padding:8px;overflow:hidden}
+.trend-svg{width:100%;height:100%}
+.trend-label{position:absolute;bottom:4px;left:8px;right:8px;display:flex;justify-content:space-between;font-size:9px;color:var(--ink-4)}
+
+/* ── 週次振り返り履歴 ── */
+.reflect-item{padding:12px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;display:flex;align-items:center;gap:12px}
+.reflect-item:last-child{border-bottom:none}
+.reflect-item:hover{background:var(--bg)}
+.reflect-icon{width:38px;height:38px;border-radius:50%;background:var(--amber-lt);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.reflect-body{flex:1;min-width:0}
+.reflect-date{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.reflect-preview{font-size:11px;color:var(--ink-3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.reflect-score{text-align:right;flex-shrink:0}
+.reflect-score-num{font-size:16px;font-weight:700;color:var(--amber)}
+.reflect-score-label{font-size:10px;color:var(--ink-4)}
+
+/* ── 日報リスト ── */
+.report-item{padding:11px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;display:flex;gap:10px;align-items:center}
+.report-item:last-child{border-bottom:none}
+.report-item:hover{background:var(--bg)}
+.r-date-col{text-align:center;min-width:28px}
+.r-date-num{font-size:14px;font-weight:600;color:var(--amber)}
+.r-date-day{font-size:10px;color:var(--ink-4)}
+.r-body{flex:1;min-width:0}
+.r-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px}
+.r-tag{display:inline-flex;font-size:10px;padding:1px 7px;border-radius:20px;background:var(--amber-lt);color:var(--amber);font-weight:500}
+.r-text{font-size:12px;color:var(--ink-3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.ai-chip{display:inline-flex;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:500;flex-shrink:0}
+.ai-ok{background:var(--green-lt);color:var(--green)}
+.ai-chk{background:var(--gold-lt);color:var(--gold)}
+.ai-ng{background:var(--red-lt);color:var(--red)}
+
+/* ── AI分析ボックス ── */
+.ai-box{background:var(--purple-lt);border:1px solid #c8c4f4;border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.ai-box-head{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.ai-orb{width:32px;height:32px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ai-box-title{font-size:13px;font-weight:600;color:var(--purple)}
+.ai-box-sub{font-size:11px;color:#6060c0}
+.ai-row{display:flex;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.65;padding:7px 0;border-top:1px solid #dddcfc;align-items:flex-start}
+.ai-row-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.ai-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ai-tag{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--green-lt);color:var(--green)}
+
+/* ── モーダル ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,16,8,.55);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border-radius:14px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.modal-head{padding:18px 18px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;font-size:22px;color:var(--ink-3);cursor:pointer;padding:4px;border-radius:6px;line-height:1}
+.modal-body{padding:14px 18px 20px}
+.reflect-good{background:var(--green-lt);border:1px solid #b4d8c0;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px}
+.reflect-bad{background:var(--red-lt);border:1px solid #f0b8b8;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px}
+.reflect-section-label{font-size:11px;font-weight:600;margin-bottom:5px}
+.reflect-good .reflect-section-label{color:var(--green)}
+.reflect-bad .reflect-section-label{color:var(--red)}
+.reflect-content{font-size:13px;color:var(--ink-2);line-height:1.75}
+.score-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.score-mini{background:var(--bg);border-radius:var(--radius-sm);padding:8px;text-align:center}
+.score-mini-label{font-size:10px;color:var(--ink-3);margin-bottom:3px}
+.score-mini-val{font-size:18px;font-weight:700;color:var(--amber)}
+.wisdom-mini{background:linear-gradient(135deg,var(--purple-lt),var(--green-lt));border-radius:var(--radius-sm);padding:12px;text-align:center;margin-bottom:12px}
+.wm-type{font-size:10px;font-weight:600;color:var(--purple);margin-bottom:5px}
+.wm-main{font-size:18px;font-weight:700;letter-spacing:.08em;color:var(--purple);margin-bottom:3px}
+.wm-meaning{font-size:11px;color:var(--purple);line-height:1.65;background:rgba(255,255,255,.6);padding:6px 10px;border-radius:4px;text-align:left}
+
+/* ── モバイルナビ ── */
+.mobile-nav{display:block;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:6px 0 max(6px,env(safe-area-inset-bottom));z-index:100}
+.mobile-nav-inner{display:flex;justify-content:space-around;max-width:720px;margin:0 auto}
+.mnav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 10px;border:none;background:none;cursor:pointer;color:var(--ink-3);font-size:10px;font-family:inherit;border-radius:var(--radius-sm);transition:color .15s}
+.mnav-btn.active{color:var(--amber)}
+.mnav-btn svg{width:22px;height:22px}
+
+/* ── トースト ── */
+.toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;font-size:13px;padding:10px 20px;border-radius:24px;box-shadow:0 4px 16px rgba(0,0,0,.18);transition:transform .3s cubic-bezier(.4,0,.2,1);white-space:nowrap;pointer-events:none;z-index:999}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media(max-width:480px){
+  .sub-metrics{grid-template-columns:1fr 1fr}
+  .score-row{grid-template-columns:1fr 1fr 1fr}
+}
+</style>
+<script src="gate.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Hoshin
+    </div>
+    <div class="nav-link" onclick="toast('ホームへ')">ホーム</div>
+    <div class="nav-link" onclick="toast('日報を書く')">日報を書く</div>
+    <div class="nav-link" onclick="toast('指針書へ')">指針書</div>
+    <div class="nav-link active">成長記録</div>
+    <div class="nav-right"><div class="nav-avatar" onclick="toast('プロフィール')">山</div></div>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div style="margin-bottom:16px">
+    <h1 style="font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:3px">自分の成長記録</h1>
+    <p style="font-size:12px;color:var(--ink-3)" id="member-label">山田 花子　/ 営業チーム　/ 2024年8月</p>
+  </div>
+
+  <!-- タブ -->
+  <div class="tabs">
+    <button class="tab active" id="tab-growth" onclick="switchTab('growth')">📈 成長度</button>
+    <button class="tab" id="tab-policy" onclick="switchTab('policy')">📋 指針理解度</button>
+    <button class="tab" id="tab-history" onclick="switchTab('history')">📓 日報履歴</button>
+    <button class="tab" id="tab-reflect" onclick="switchTab('reflect')">🌟 振り返り</button>
+  </div>
+
+  <!-- ===== 成長度タブ ===== -->
+  <div id="pane-growth">
+
+    <!-- スコアリング -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <!-- 成長度 -->
+      <div class="card">
+        <div class="score-hero">
+          <div class="score-label">成長度スコア</div>
+          <div class="score-ring-wrap">
+            <svg viewBox="0 0 120 120">
+              <circle class="score-ring-bg" cx="60" cy="60" r="50"/>
+              <circle class="score-ring-fill" id="ring-growth" cx="60" cy="60" r="50"
+                stroke="#4a8c60"
+                stroke-dasharray="314"
+                stroke-dashoffset="314"/>
+            </svg>
+            <div class="score-center">
+              <div class="score-num" style="color:var(--green)">74</div>
+              <div class="score-max">/ 100</div>
+            </div>
+          </div>
+          <span class="score-diff sd-up">↑ 先月より +6</span>
+        </div>
+        <div class="card-body" style="padding-top:0">
+          <div class="bar-item">
+            <div class="bar-meta"><span class="bar-name">日報の質・量</span><span class="bar-pct" style="color:var(--green)">80</span></div>
+            <div class="bar-wrap"><div class="bar" style="width:80%;background:var(--green-md)"></div></div>
+          </div>
+          <div class="bar-item">
+            <div class="bar-meta"><span class="bar-name">気づきの記録</span><span class="bar-pct" style="color:var(--green)">76</span></div>
+            <div class="bar-wrap"><div class="bar" style="width:76%;background:var(--green-md)"></div></div>
+          </div>
+          <div class="bar-item">
+            <div class="bar-meta"><span class="bar-name">週次振り返り継続</span><span class="bar-pct" style="color:var(--gold)">68</span></div>
+            <div class="bar-wrap"><div class="bar" style="width:68%;background:#d4a847"></div></div>
+          </div>
+          <div class="bar-item">
+            <div class="bar-meta"><span class="bar-name">目標の進捗更新</span><span class="bar-pct">72</span></div>
+            <div class="bar-wrap"><div class="bar" style="width:72%;background:var(--amber-md)"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 指針理解度 -->
+      <div class="card">
+        <div class="score-hero">
+          <div class="score-label">指針理解度スコア</div>
+          <div class="score-ring-wrap">
+            <svg viewBox="0 0 120 120">
+              <circle class="score-ring-bg" cx="60" cy="60" r="50"/>
+              <circle class="score-ring-fill" id="ring-policy" cx="60" cy="60" r="50"
+                stroke="#534AB7"
+                stroke-dasharray="314"
+                stroke-dashoffset="314"/>
+            </svg>
+            <div class="score-center">
+              <div class="score-num" style="color:var(--purple)" id="policy-score-num">—</div>
+              <div class="score-max">/ 100</div>
+            </div>
+          </div>
+          <span class="score-diff sd-up" style="background:var(--purple-lt);color:var(--purple)">日報の指針言及から算出</span>
+        </div>
+        <div class="card-body" style="padding-top:0">
+          <div id="policy-bars-mini"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- サブ指標 -->
+    <div class="sub-metrics">
+      <div class="sub-metric" onclick="openSubMetric('submit')">
+        <div class="sm-label">今月の日報提出率</div>
+        <div class="sm-val" style="color:var(--green)">95%</div>
+        <div class="sm-sub" style="color:var(--green-md)">継続中 🔥</div>
+      </div>
+      <div class="sub-metric" onclick="openSubMetric('reflect')">
+        <div class="sm-label">週次振り返り継続</div>
+        <div class="sm-val" style="color:var(--amber)">8週</div>
+        <div class="sm-sub" style="color:var(--ink-3)">連続</div>
+      </div>
+      <div class="sub-metric" onclick="openSubMetric('insight')">
+        <div class="sm-label">今月の気づき記録</div>
+        <div class="sm-val">23件</div>
+        <div class="sm-sub" style="color:var(--green-md)">先月より +4</div>
+      </div>
+      <div class="sub-metric" onclick="openSubMetric('ai')">
+        <div class="sm-label">AIスコア（今月平均）</div>
+        <div class="sm-val" style="color:var(--amber)">74pt</div>
+        <div class="sm-sub" style="color:var(--ink-3)">目標 80pt</div>
+      </div>
+    </div>
+
+    <!-- トレンドグラフ -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">📊 成長度の推移（過去6か月）</span>
+        <a class="card-link" onclick="openTrendModal()">拡大 ↗</a>
+      </div>
+      <div class="card-body">
+        <div class="trend-chart">
+          <svg class="trend-svg" viewBox="0 0 300 60" preserveAspectRatio="none">
+            <!-- グリッド -->
+            <line x1="0" y1="30" x2="300" y2="30" stroke="#e8e4da" stroke-width=".5" stroke-dasharray="3 3"/>
+            <line x1="0" y1="10" x2="300" y2="10" stroke="#e8e4da" stroke-width=".5" stroke-dasharray="3 3"/>
+            <line x1="0" y1="50" x2="300" y2="50" stroke="#e8e4da" stroke-width=".5" stroke-dasharray="3 3"/>
+            <!-- 成長度ライン -->
+            <polyline points="10,52 60,46 110,43 160,40 210,36 260,32 290,28" fill="none" stroke="#4a8c60" stroke-width="2.5" stroke-linejoin="round"/>
+            <!-- 指針理解度ライン -->
+            <polyline points="10,55 60,50 110,48 160,44 210,41 260,38 290,34" fill="none" stroke="#534AB7" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round"/>
+            <!-- ポイント -->
+            <circle cx="290" cy="28" r="4" fill="#4a8c60"/>
+            <circle cx="290" cy="34" r="4" fill="#534AB7"/>
+          </svg>
+          <div class="trend-label">
+            <span>3月</span><span>4月</span><span>5月</span><span>6月</span><span>7月</span><span>8月</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11px">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:2.5px;background:#4a8c60;display:inline-block;border-radius:2px"></span>成長度</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:2px;background:#534AB7;display:inline-block;border-radius:2px;opacity:.7"></span>指針理解度</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI分析 -->
+    <div class="ai-box">
+      <div class="ai-box-head">
+        <div class="ai-orb">✦</div>
+        <div>
+          <div class="ai-box-title">AIからのフィードバック</div>
+          <div class="ai-box-sub">今月の日報を分析しました</div>
+        </div>
+      </div>
+      <div class="ai-row"><span class="ai-row-icon">✅</span><span>日報の提出率が95%と非常に高いです。継続力が成長度を押し上げています。</span></div>
+      <div class="ai-row"><span class="ai-row-icon">💡</span><span>週次振り返りをもう少し続けると、来月は成長度80点台に届きます。今週も書いてみましょう。</span></div>
+      <div class="ai-row"><span class="ai-row-icon">⚠️</span><span>「挑戦を楽しむ」指針への言及が38%と低めです。日報に「今日試みた新しいこと」を1行追加するだけで大きく変わります。</span></div>
+      <div class="ai-tags">
+        <span class="ai-tag">継続力</span>
+        <span class="ai-tag">顧客への誠実さ</span>
+        <span class="ai-tag">自己改善意識</span>
+      </div>
+    </div>
+
+  </div><!-- /pane-growth -->
+
+  <!-- ===== 指針理解度タブ ===== -->
+  <div id="pane-policy" style="display:none">
+    <div class="card">
+      <div class="card-head"><span class="card-title">📋 指針ごとの理解度（今月）</span></div>
+      <div class="card-body">
+        <div id="policy-bars-full"></div>
+      </div>
+    </div>
+    <div class="ai-box">
+      <div class="ai-box-head">
+        <div class="ai-orb">✦</div>
+        <div><div class="ai-box-title">指針理解度 AIアドバイス</div><div class="ai-box-sub">今月の日報から分析</div></div>
+      </div>
+      <div class="ai-row"><span class="ai-row-icon">✅</span><span id="policy-ai-high">日報がまだありません。</span></div>
+      <div class="ai-row"><span class="ai-row-icon">💡</span><span id="policy-ai-low">日報を書くと、指針ごとのアドバイスが表示されます。</span></div>
+    </div>
+  </div>
+
+  <!-- ===== 日報履歴タブ ===== -->
+  <div id="pane-history" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <select style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);width:auto"><option>期間: 今月</option><option>先月</option><option>3か月</option></select>
+      <select style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);width:auto"><option>指針: すべて</option><option>お客様第一</option><option>挑戦を楽しむ</option></select>
+      <input type="text" placeholder="キーワードで探す" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;flex:1;min-width:120px">
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== 振り返りタブ ===== -->
+  <div id="pane-reflect" style="display:none">
+
+    <div class="ai-box">
+      <div class="ai-box-head">
+        <div class="ai-orb">✦</div>
+        <div><div class="ai-box-title">振り返りの傾向 AIサマリー</div><div class="ai-box-sub">過去8週間の振り返りを分析</div></div>
+      </div>
+      <div class="ai-row"><span class="ai-row-icon">✅</span><span>「良かったこと」に顧客関連の成果を書く頻度が増えています。お客様への意識が行動に表れています。</span></div>
+      <div class="ai-row"><span class="ai-row-icon">💡</span><span>「来週に活かすこと」の記入が浅くなっています。具体的なアクションを1つ書くと成長度が上がります。</span></div>
+      <div class="ai-tags">
+        <span class="ai-tag">継続的改善</span>
+        <span class="ai-tag">顧客志向</span>
+        <span class="ai-tag">自己内省</span>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0">
+      <div class="card-head" style="padding:13px 15px"><span class="card-title">🌟 過去の振り返り履歴</span></div>
+      <div>
+        <div class="reflect-item" onclick="openReflect(1)">
+          <div class="reflect-icon">⭐</div>
+          <div class="reflect-body">
+            <div class="reflect-date">8月9日（金）— 今週</div>
+            <div class="reflect-preview">良い点：B社から受注できた。C社の反省を活かせた。反省：見積もりが遅れた</div>
+          </div>
+          <div class="reflect-score">
+            <div class="reflect-score-num">7.0</div>
+            <div class="reflect-score-label">/ 10点</div>
+          </div>
+        </div>
+        <div class="reflect-item" onclick="openReflect(2)">
+          <div class="reflect-icon">⭐</div>
+          <div class="reflect-body">
+            <div class="reflect-date">8月2日（金）</div>
+            <div class="reflect-preview">良い点：初めての英語プレゼンに挑戦できた。反省：準備が不足していた</div>
+          </div>
+          <div class="reflect-score">
+            <div class="reflect-score-num">6.3</div>
+            <div class="reflect-score-label">/ 10点</div>
+          </div>
+        </div>
+        <div class="reflect-item" onclick="openReflect(3)">
+          <div class="reflect-icon">⭐</div>
+          <div class="reflect-body">
+            <div class="reflect-date">7月26日（金）</div>
+            <div class="reflect-preview">良い点：苦手なプレゼンに積極的に取り組んだ。反省：睡眠不足で集中できない日があった</div>
+          </div>
+          <div class="reflect-score">
+            <div class="reflect-score-num">7.7</div>
+            <div class="reflect-score-label">/ 10点</div>
+          </div>
+        </div>
+        <div class="reflect-item" onclick="openReflect(4)">
+          <div class="reflect-icon">⭐</div>
+          <div class="reflect-body">
+            <div class="reflect-date">7月19日（金）</div>
+            <div class="reflect-preview">良い点：チームの後輩を助けることができた。反省：自分の目標が後回しになった</div>
+          </div>
+          <div class="reflect-score">
+            <div class="reflect-score-num">6.7</div>
+            <div class="reflect-score-label">/ 10点</div>
+          </div>
+        </div>
+        <div class="reflect-item" onclick="openReflect(5)">
+          <div class="reflect-icon">⭐</div>
+          <div class="reflect-body">
+            <div class="reflect-date">7月12日（金）</div>
+            <div class="reflect-preview">良い点：大型案件の提案書を期限内に完成できた。反省：細かい確認が漏れた</div>
+          </div>
+          <div class="reflect-score">
+            <div class="reflect-score-num">8.0</div>
+            <div class="reflect-score-label">/ 10点</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- 振り返りモーダル -->
+<div class="modal-overlay" id="reflect-modal" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title" id="m-date">8月9日（金）の振り返り</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="score-row">
+        <div class="score-mini"><div class="score-mini-label">指針を意識できた</div><div class="score-mini-val" id="m-s1">7</div></div>
+        <div class="score-mini"><div class="score-mini-label">チームに貢献した</div><div class="score-mini-val" id="m-s2">6</div></div>
+        <div class="score-mini"><div class="score-mini-label">来週が楽しみ</div><div class="score-mini-val" id="m-s3">8</div></div>
+      </div>
+      <div class="reflect-good">
+        <div class="reflect-section-label">✅ 今週よかったこと</div>
+        <div class="reflect-content" id="m-good">B社から正式な受注連絡が来た。長期間の提案が実を結んだ。<br>後輩の資料作成をサポートし、感謝された。</div>
+      </div>
+      <div class="reflect-bad">
+        <div class="reflect-section-label">⚠️ 今週の反省点</div>
+        <div class="reflect-content" id="m-bad">B社の見積もり送付が遅れてしまった。タスクの優先順位の誤り。<br>C社のプレゼンで質問に答えられなかった場面があった。</div>
+      </div>
+      <div class="wisdom-mini">
+        <div class="wm-type" id="m-w-type">✦ この週のあなたへ贈る言葉</div>
+        <div class="wm-main" id="m-w-main">一歩一歩</div>
+        <div class="wm-meaning" id="m-w-meaning">大きな成果も、小さな一歩の積み重ねから生まれる。今週のB社成約は、毎週続けた訪問という「一歩」が実を結んだ証です。</div>
+      </div>
+      <div style="background:var(--purple-lt);border:1px solid #c8c4f4;border-radius:var(--radius-sm);padding:10px 12px">
+        <div style="font-size:11px;font-weight:600;color:var(--purple);margin-bottom:5px">✦ AIからのメッセージ</div>
+        <div class="reflect-content" id="m-ai" style="color:var(--purple);font-size:12px">B社受注は、これまでの継続的な訪問と顧客の声を起点にした行動の成果です。自信を持ってください。見積もりの遅れは、月曜朝のタスク整理で解決できます。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 日報詳細モーダル（成長記録用） -->
+<div id="growth-report-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,16,8,.55);z-index:200;align-items:center;justify-content:center;padding:16px" onclick="closeGrowthReport()">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+    <div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;color:#1e1c18" id="gr-date">8月9日の日報</div>
+      <button onclick="closeGrowthReport()" style="background:none;border:none;font-size:20px;color:#8a877e;cursor:pointer;padding:4px;line-height:1">✕</button>
+    </div>
+    <div style="padding:0 18px 18px">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px" id="gr-tags"></div>
+      <div style="display:flex;gap:7px;margin-bottom:11px">
+        <span id="gr-ai" style="font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500"></span>
+      </div>
+      <div style="background:#faf8f4;border-radius:8px;padding:10px 12px;margin-bottom:9px">
+        <div style="font-size:10px;color:#8a877e;margin-bottom:4px;font-weight:500">今日やったこと</div>
+        <div style="font-size:13px;color:#4a4740;line-height:1.75" id="gr-body"></div>
+      </div>
+      <div style="background:#faf8f4;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+        <div style="font-size:10px;color:#8a877e;margin-bottom:4px;font-weight:500">気づき・学んだこと</div>
+        <div style="font-size:13px;color:#4a4740;line-height:1.75" id="gr-learning"></div>
+      </div>
+      <div id="gr-comment-wrap" style="display:none;background:#e8f1eb;border:1px solid #b4d8c0;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+        <div style="font-size:10px;color:#2d5a3d;font-weight:500;margin-bottom:4px">上司からのコメント</div>
+        <div style="font-size:13px;color:#1e1c18;font-style:italic" id="gr-comment"></div>
+      </div>
+      <button onclick="closeGrowthReport()" style="width:100%;padding:10px;background:#c07812;border:none;color:#fff;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:inherit">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- トレンドグラフ拡大モーダル -->
+<div id="trend-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,16,8,.55);z-index:200;align-items:center;justify-content:center;padding:16px" onclick="closeTrendModal()">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:560px;box-shadow:0 8px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+    <div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:700;color:#1e1c18">成長度の推移（過去6か月）</div>
+      <button onclick="closeTrendModal()" style="background:none;border:none;font-size:20px;color:#8a877e;cursor:pointer;padding:4px;line-height:1">✕</button>
+    </div>
+    <div style="padding:0 18px 20px">
+      <div style="background:#faf8f4;border-radius:10px;padding:16px;position:relative;height:200px">
+        <svg viewBox="0 0 400 140" style="width:100%;height:100%">
+          <line x1="0" y1="70" x2="400" y2="70" stroke="#e8e4da" stroke-width="1" stroke-dasharray="4 4"/>
+          <line x1="0" y1="20" x2="400" y2="20" stroke="#e8e4da" stroke-width="1" stroke-dasharray="4 4"/>
+          <line x1="0" y1="120" x2="400" y2="120" stroke="#e8e4da" stroke-width="1" stroke-dasharray="4 4"/>
+          <text x="4" y="24" font-size="9" fill="#c4c1b8">100</text>
+          <text x="4" y="74" font-size="9" fill="#c4c1b8">50</text>
+          <text x="4" y="124" font-size="9" fill="#c4c1b8">0</text>
+          <!-- 成長度 -->
+          <polyline points="40,115 100,102 170,96 230,90 290,80 350,71 390,63" fill="none" stroke="#4a8c60" stroke-width="3" stroke-linejoin="round"/>
+          <!-- 指針理解度 -->
+          <polyline points="40,120 100,112 170,108 230,99 290,93 350,86 390,78" fill="none" stroke="#534AB7" stroke-width="2.5" stroke-dasharray="6 3" stroke-linejoin="round"/>
+          <!-- ポイント -->
+          <circle cx="390" cy="63" r="5" fill="#4a8c60"/>
+          <text x="370" y="57" font-size="9" fill="#4a8c60" font-weight="600">74</text>
+          <circle cx="390" cy="78" r="5" fill="#534AB7"/>
+          <text x="370" y="74" font-size="9" fill="#534AB7" font-weight="600">71</text>
+        </svg>
+        <div style="position:absolute;bottom:12px;left:16px;right:16px;display:flex;justify-content:space-between;font-size:10px;color:#c4c1b8">
+          <span>3月</span><span>4月</span><span>5月</span><span>6月</span><span>7月</span><span>8月</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:12px">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:18px;height:3px;background:#4a8c60;display:inline-block;border-radius:2px"></span>成長度 (74)</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:18px;height:2px;background:#534AB7;display:inline-block;border-radius:2px;opacity:.8"></span>指針理解度 (71)</span>
+      </div>
+      <div style="margin-top:12px;background:#faf8f4;border-radius:8px;padding:10px 12px">
+        <div style="font-size:12px;font-weight:500;color:#4a4740;margin-bottom:5px">トレンド分析</div>
+        <div style="font-size:12px;color:#8a877e;line-height:1.7">
+          成長度は3月の<strong style="color:#4a8c60">50pt</strong>から8月の<strong style="color:#4a8c60">74pt</strong>へ着実に上昇中。日報継続率が高い月ほどスコアが伸びる傾向があります。指針理解度は「挑戦を楽しむ」の低さが全体スコアを引き下げています。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- サブ指標詳細モーダル -->
+<div id="sub-metric-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,16,8,.55);z-index:200;align-items:center;justify-content:center;padding:16px" onclick="closeSubMetric()">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+    <div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;color:#1e1c18" id="sm-title">詳細</div>
+      <button onclick="closeSubMetric()" style="background:none;border:none;font-size:20px;color:#8a877e;cursor:pointer;padding:4px;line-height:1">✕</button>
+    </div>
+    <div style="padding:0 18px 18px" id="sm-body"></div>
+  </div>
+</div>
+
+<!-- モバイルナビ -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mnav-btn" onclick="toast('ホームへ')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>ホーム
+    </button>
+    <button class="mnav-btn" onclick="toast('日報を書く')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>日報
+    </button>
+    <button class="mnav-btn" onclick="toast('指針書へ')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>指針書
+    </button>
+    <button class="mnav-btn active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>成長記録
+    </button>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="data/store.js"></script>
+<script src="data/team.js"></script>
+<script src="data/reports.js"></script>
+<script>
+const MY_MEMBER_ID = 'yamada';
+
+// ── 日報履歴モーダル（HoshinReportsの単一情報源から表示） ──
+function openGrowthReport(id) {
+  const r = HoshinReports.get(id);
+  if (!r) return;
+  document.getElementById('gr-date').textContent = r.date + 'の日報';
+  document.getElementById('gr-tags').innerHTML = (r.tag || '').split(' / ').filter(Boolean).map(t =>
+    `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#fef3e2;color:#b06a10;font-weight:500">${t}</span>`).join('');
+  const ai = HoshinReports.aiLabel(r.ai);
+  const aiEl = document.getElementById('gr-ai');
+  const aiStyle = ai.kind === 'match' ? 'background:#e8f1eb;color:#2d5a3d' : 'background:#fdeee6;color:#c05010';
+  aiEl.textContent = ai.kind === 'match' ? '✓ 合致' : '要確認';
+  aiEl.style.cssText = `font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500;${aiStyle}`;
+  document.getElementById('gr-body').textContent = r.body || '';
+  document.getElementById('gr-learning').textContent = r.learning || '';
+  const cw = document.getElementById('gr-comment-wrap');
+  const cc = document.getElementById('gr-comment');
+  if (r.commented) { cw.style.display = 'block'; cc.textContent = r.comment + '　— 田中部長'; } else { cw.style.display = 'none'; }
+  document.getElementById('growth-report-overlay').style.display = 'flex';
+}
+function closeGrowthReport() {
+  document.getElementById('growth-report-overlay').style.display = 'none';
+}
+
+// ── 日報履歴タブ・指針理解度バーを実データで描画 ──
+function renderHistory() {
+  const rows = HoshinReports.list([MY_MEMBER_ID]);
+  const container = document.getElementById('history-list');
+  if (!container) return;
+  if (!rows.length) {
+    container.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--ink-4)">日報がまだありません。</div>';
+    return;
+  }
+  container.innerHTML = rows.map(r => {
+    const day = (r.date.match(/(\d+)日/) || [])[1] || '';
+    const wd = (r.date.match(/（(.)）/) || [])[1] || '';
+    const isMatch = r.ai === 'match';
+    const tags = (r.tag || '').split('/').map(s => s.trim()).filter(Boolean)
+      .map(t => '<span class="r-tag">' + t + '</span>').join('');
+    return (
+      '<div class="report-item" onclick="openGrowthReport(\'' + r.id + '\')">' +
+        '<div class="r-date-col"><div class="r-date-num">' + day + '</div><div class="r-date-day">' + wd + '</div></div>' +
+        '<div class="r-body"><div class="r-tags">' + tags + '</div><div class="r-text">' + (r.body || '') + '</div></div>' +
+        '<span class="ai-chip ' + (isMatch ? 'ai-ok' : 'ai-chk') + '">' + (isMatch ? '✓ 合致' : '要確認') + '</span>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function renderPolicyBars() {
+  const rows = HoshinReports.tagPenetration([MY_MEMBER_ID]);
+  const avg = rows.length ? Math.round(rows.reduce((s, r) => s + r.pct, 0) / rows.length) : 0;
+
+  // 指針理解度スコア（リング・数値）
+  const scoreEl = document.getElementById('policy-score-num');
+  if (scoreEl) scoreEl.textContent = rows.length ? avg : '—';
+
+  // 成長度タブ内の指針バー
+  const mini = document.getElementById('policy-bars-mini');
+  if (mini) {
+    mini.innerHTML = rows.length ? rows.map(r => {
+      const low = r.pct < 50;
+      return (
+        '<div class="bar-item">' +
+          '<div class="bar-meta"><span class="bar-name"' + (low ? ' style="color:var(--red)"' : '') + '>' + r.tag + '</span>' +
+          '<span class="bar-pct"' + (r.pct >= 80 ? ' style="color:var(--green)"' : (low ? ' style="color:var(--red)"' : '')) + '>' + r.pct + '</span></div>' +
+          '<div class="bar-wrap"><div class="bar" style="width:' + r.pct + '%;background:' + (low ? 'var(--red)' : 'var(--purple)') + '"></div></div>' +
+        '</div>'
+      );
+    }).join('') : '<div style="font-size:12px;color:var(--ink-4)">日報がまだありません。</div>';
+  }
+
+  // 指針理解度タブの詳細バー
+  const full = document.getElementById('policy-bars-full');
+  if (full) {
+    full.innerHTML = rows.length ? rows.map(r => {
+      const low = r.pct < 50;
+      const badge = r.pct >= 80 ? '<span class="badge-sm bg">高い</span>' : (r.pct >= 50 ? '<span class="badge-sm bm">普通</span>' : '<span class="badge-sm br">低め</span>');
+      const barColor = r.pct >= 80 ? 'var(--green-md)' : (low ? 'var(--red)' : '#d4a847');
+      const note = low
+        ? '<div style="font-size:11px;color:var(--red);margin-top:3px">今月 ' + r.count + '件のみ。意識して書いてみましょう。</div>'
+        : '<div style="font-size:11px;color:var(--ink-3);margin-top:3px">今月 ' + r.count + '件の日報で言及あり</div>';
+      return (
+        '<div class="bar-item">' +
+          '<div class="bar-meta"><span class="bar-name"' + (low ? ' style="color:var(--red)"' : '') + '>' + r.tag + ' ' + badge + '</span>' +
+          '<span class="bar-pct"' + (r.pct >= 80 ? ' style="color:var(--green)"' : (low ? ' style="color:var(--red)"' : '')) + '>' + r.pct + '%</span></div>' +
+          '<div class="bar-wrap" style="height:9px"><div class="bar" style="width:' + r.pct + '%;background:' + barColor + '"></div></div>' +
+          note +
+        '</div>'
+      );
+    }).join('') : '<div style="font-size:12px;color:var(--ink-4);padding:4px 0">日報がまだありません。</div>';
+  }
+
+  // AIアドバイス（最高・最低の指針から自動生成）
+  const aiHigh = document.getElementById('policy-ai-high');
+  const aiLow = document.getElementById('policy-ai-low');
+  if (aiHigh && aiLow && rows.length) {
+    const top = rows[0], low = rows[rows.length - 1];
+    aiHigh.textContent = '「' + top.tag + '」が' + top.pct + '%と最も高いです。この指針に沿った行動が日報に表れています。';
+    aiLow.textContent = low.pct < 50
+      ? '「' + low.tag + '」への言及がまだ少なめ（' + low.pct + '%）です。日報でこの指針を意識して書いてみましょう。'
+      : 'どの指針もバランス良く言及できています。この調子で続けましょう。';
+  }
+  return avg;
+}
+
+// ── トレンドグラフ拡大 ──
+function openTrendModal()  { document.getElementById('trend-modal-overlay').style.display = 'flex'; }
+function closeTrendModal() { document.getElementById('trend-modal-overlay').style.display = 'none'; }
+
+// ── サブ指標詳細 ──
+const subMetricData = {
+  submit: {
+    title: '📅 日報提出率',
+    body: `<div style="font-size:24px;font-weight:700;color:#4a8c60;text-align:center;margin:10px 0">95%</div>
+      <div style="background:#faf8f4;border-radius:8px;padding:10px 12px;font-size:12px;color:#4a4740;line-height:1.7;margin-bottom:10px">
+        今月20営業日のうち<strong>19日</strong>提出済みです。未提出は8月1日（水）のみ。継続的な提出が成長度スコアの向上に貢献しています。
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a877e">
+          <span>先月</span><span style="font-weight:500;color:#1e1c18">91%（20日中18日）</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a877e">
+          <span>先々月</span><span style="font-weight:500;color:#1e1c18">86%（22日中19日）</span>
+        </div>
+      </div>`
+  },
+  reflect: {
+    title: '🌟 週次振り返り継続',
+    body: `<div style="font-size:24px;font-weight:700;color:#c07812;text-align:center;margin:10px 0">8週連続</div>
+      <div style="background:#faf8f4;border-radius:8px;padding:10px 12px;font-size:12px;color:#4a4740;line-height:1.7;margin-bottom:10px">
+        毎週金曜日に振り返りを記録しています。8週間の連続記録中です。振り返りを続けることで指針理解度が月平均<strong>+5pt</strong>向上しています。
+      </div>
+      <div style="font-size:11px;color:#8a877e">最長記録: 8週（現在） / 目標: 12週</div>`
+  },
+  insight: {
+    title: '💡 今月の気づき記録',
+    body: `<div style="font-size:24px;font-weight:700;color:#1e1c18;text-align:center;margin:10px 0">23件</div>
+      <div style="background:#faf8f4;border-radius:8px;padding:10px 12px;font-size:12px;color:#4a4740;line-height:1.7;margin-bottom:10px">
+        先月（19件）より<strong style="color:#4a8c60">+4件</strong>増加しました。特に「顧客対応」に関する気づきが多い月でした。
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a877e"><span>顧客対応</span><span style="font-weight:500;color:#1e1c18">9件</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a877e"><span>チームワーク</span><span style="font-weight:500;color:#1e1c18">7件</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a877e"><span>自己改善</span><span style="font-weight:500;color:#1e1c18">7件</span></div>
+      </div>`
+  },
+  ai: {
+    title: '✦ AIスコア（今月平均）',
+    body: `<div style="font-size:24px;font-weight:700;color:#c07812;text-align:center;margin:10px 0">74pt <span style="font-size:14px;color:#8a877e">/ 目標 80pt</span></div>
+      <div style="background:#faf8f4;border-radius:8px;padding:10px 12px;font-size:12px;color:#4a4740;line-height:1.7;margin-bottom:10px">
+        AIが日報の内容と指針の一致度を自動採点しています。「挑戦を楽しむ」への言及が少ないため目標の80ptに届いていません。
+      </div>
+      <div style="background:#eeedfe;border:1px solid #c8c4f4;border-radius:8px;padding:9px 11px;font-size:12px;color:#3d3591;line-height:1.65">
+        💡 日報の最後に「今日初めて試したこと」を1行書くだけで、来月のスコアが80pt超えの見込みです。
+      </div>`
+  }
+};
+function openSubMetric(key) {
+  const d = subMetricData[key];
+  if (!d) return;
+  document.getElementById('sm-title').textContent = d.title;
+  document.getElementById('sm-body').innerHTML = d.body;
+  document.getElementById('sub-metric-overlay').style.display = 'flex';
+}
+function closeSubMetric() {
+  document.getElementById('sub-metric-overlay').style.display = 'none';
+}
+
+// タブ切り替え
+const panes = ['growth','policy','history','reflect'];
+function switchTab(t) {
+  panes.forEach(p => {
+    document.getElementById('pane-' + p).style.display = p === t ? 'block' : 'none';
+    document.getElementById('tab-' + p).classList.toggle('active', p === t);
+  });
+}
+
+// リングアニメーション
+function animateRing(id, score, color) {
+  const circ = document.getElementById(id);
+  if (!circ) return;
+  const r = 50, circumference = 2 * Math.PI * r;
+  circ.style.strokeDasharray = circumference;
+  circ.style.strokeDashoffset = circumference;
+  setTimeout(() => {
+    const offset = circumference * (1 - score / 100);
+    circ.style.transition = 'stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)';
+    circ.style.strokeDashoffset = offset;
+  }, 300);
+}
+window.addEventListener('load', () => {
+  // メンバー名（HoshinTeamから）
+  const m = HoshinTeam.byId(MY_MEMBER_ID);
+  if (m) document.getElementById('member-label').textContent = m.name + '　/ ' + m.dept + '　/ 2024年8月';
+
+  // 実データ描画（日報履歴・指針理解度）
+  renderHistory();
+  const policyAvg = renderPolicyBars();
+
+  animateRing('ring-growth', 74, '#4a8c60');            // 成長度は composite 指標のため据え置き
+  animateRing('ring-policy', policyAvg || 0, '#534AB7'); // 指針理解度は日報タグ集計から算出
+
+  // バーアニメーション
+  document.querySelectorAll('.bar,.goal-bar').forEach(b => {
+    const w = b.style.width; b.style.width = '0';
+    requestAnimationFrame(() => setTimeout(() => { b.style.width = w; }, 200));
+  });
+});
+
+// 振り返りモーダル
+const reflectData = [
+  null,
+  { date:'8月9日（金）の振り返り', s1:7, s2:6, s3:8, good:'B社から正式な受注連絡が来た。長期間の提案が実を結んだ。\n後輩の資料作成をサポートし、感謝された。', bad:'B社の見積もり送付が遅れてしまった。タスクの優先順位の誤り。\nC社のプレゼンで質問に答えられなかった場面があった。', wType:'✦ この週のあなたへ贈る言葉', wMain:'一歩一歩', wMeaning:'大きな成果も、小さな一歩の積み重ねから生まれる。今週のB社成約は、毎週続けた訪問という「一歩」が実を結んだ証です。', ai:'B社受注は、これまでの継続的な訪問と顧客の声を起点にした行動の成果です。自信を持ってください。' },
+  { date:'8月2日（金）の振り返り', s1:6, s2:5, s3:7, good:'初めての英語でのプレゼンに挑戦できた。失敗したが学びになった。', bad:'準備が不足していた。もっと早く練習を始めるべきだった。', wType:'✦ この週のあなたへ贈る言葉', wMain:'七転び八起き', wMeaning:'何度失敗しても立ち上がること。英語プレゼンへの挑戦は、「挑戦を楽しむ」指針の体現そのものです。', ai:'英語プレゼンへの挑戦は非常に勇気がいることでした。失敗を糧にする姿勢が今後の成長につながります。' },
+  { date:'7月26日（金）の振り返り', s1:8, s2:7, s3:8, good:'苦手なプレゼンに積極的に取り組んだ。顧客の評価が良かった。', bad:'睡眠不足で集中できない日があった。生活リズムを整えたい。', wType:'✦ この週のあなたへ贈る言葉', wMain:'継続は力なり', wMeaning:'たゆまず努力を続けることが大きな成果につながる。毎週の顧客訪問が積み重なっています。', ai:'自分の苦手に向き合い続ける姿勢が成長度を押し上げています。体調管理も大切にしてください。' },
+  { date:'7月19日（金）の振り返り', s1:6, s2:8, s3:6, good:'チームの後輩を助けることができた。感謝された。', bad:'自分の目標が後回しになってしまった。バランスが難しい。', wType:'✦ この週のあなたへ贈る言葉', wMain:'和して同ぜず', wMeaning:'仲間を大切にしながら、自分の軸もしっかり持つこと。チームへの貢献と自己成長のバランスを意識しましょう。', ai:'チームへの貢献は素晴らしいです。来週は自分の目標に集中する時間を意図的に確保してみましょう。' },
+  { date:'7月12日（金）の振り返り', s1:8, s2:6, s3:9, good:'大型案件の提案書を期限内に完成できた。自分でも手応えがあった。', bad:'細かい確認が漏れた箇所があった。チェックリストを作るべきだった。', wType:'✦ この週のあなたへ贈る言葉', wMain:'"完璧は完成の敵だ"', wMeaning:'ボルテールの言葉。完璧を求めすぎず、まず完成させることが大切です。今週はその実践ができていました。', ai:'大型案件を期限内に完成させた達成感は本物です。チェックリストの導入は来週ぜひ試してみましょう。' },
+];
+
+function openReflect(idx) {
+  const d = reflectData[idx];
+  if (!d) return;
+  document.getElementById('m-date').textContent = d.date;
+  document.getElementById('m-s1').textContent = d.s1;
+  document.getElementById('m-s2').textContent = d.s2;
+  document.getElementById('m-s3').textContent = d.s3;
+  document.getElementById('m-good').innerHTML = d.good.replace(/\n/g, '<br>');
+  document.getElementById('m-bad').innerHTML  = d.bad.replace(/\n/g, '<br>');
+  document.getElementById('m-w-type').textContent = d.wType;
+  document.getElementById('m-w-main').textContent = d.wMain;
+  document.getElementById('m-w-meaning').textContent = d.wMeaning;
+  document.getElementById('m-ai').textContent = d.ai;
+  document.getElementById('reflect-modal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('reflect-modal').classList.remove('show');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// トースト
+let tt;
+function toast(m) {
+  const e = document.getElementById('toast');
+  e.textContent = m; e.classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => e.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

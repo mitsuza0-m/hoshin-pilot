@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoshin — 今日の日報を書く（管理職）</title>
+<style>
+:root {
+  --ink:       #1e1c18;
+  --ink-2:     #4a4740;
+  --ink-3:     #8a877e;
+  --ink-4:     #c4c1b8;
+  --bg:        #f4f7f5;
+  --surface:   #ffffff;
+  --border:    #dde8e2;
+  --amber:     #0e5c46;
+  --amber-lt:  #e4f3ed;
+  --amber-md:  #1a8060;
+  --amber-btn: #0d5240;
+  --green:     #2d5a3d;
+  --green-lt:  #e8f1eb;
+  --green-md:  #4a8c60;
+  --red:       #b83232;
+  --red-lt:    #fdeaea;
+  --purple:    #3d3591;
+  --purple-lt: #eeedfe;
+  --blue:      #1a5fa8;
+  --blue-lt:   #e6f0fb;
+  --gcal:      #1967d2;
+  --gcal-lt:   #e8f0fe;
+  --friday:    #8a4f10;
+  --friday-lt: #fff4e6;
+  --radius:    10px;
+  --radius-sm: 6px;
+  --shadow:    0 1px 3px rgba(0,0,0,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.6;
+  min-height:100vh;
+}
+
+/* ── ナビ ── */
+.nav{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.nav-inner{
+  max-width:800px;margin:0 auto;
+  padding:0 20px;height:52px;
+  display:flex;align-items:center;gap:8px;
+}
+.nav-logo{
+  font-size:17px;font-weight:700;
+  letter-spacing:-.02em;color:var(--amber);
+  display:flex;align-items:center;gap:6px;margin-right:12px;
+  cursor:pointer;
+}
+.nav-logo svg{width:20px;height:20px}
+.nav-link{
+  padding:5px 10px;border-radius:var(--radius-sm);
+  font-size:12px;color:var(--ink-3);cursor:pointer;
+  transition:background .15s;white-space:nowrap;
+}
+.nav-link:hover{background:var(--bg)}
+.nav-link.active{background:var(--amber-lt);color:var(--amber);font-weight:500}
+.nav-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.nav-avatar{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--amber-md);color:#fff;
+  font-size:11px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+
+/* ── ページ ── */
+.page{max-width:800px;margin:0 auto;padding:24px 20px 80px}
+
+/* ── ステッパー ── */
+.stepper{
+  display:flex;align-items:center;
+  margin-bottom:28px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 20px;
+  box-shadow:var(--shadow);
+}
+.step{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  flex:1;cursor:pointer;
+}
+.step-circle{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;
+  transition:all .2s;
+}
+.step-done .step-circle{background:var(--green-lt);color:var(--green);border:1.5px solid var(--green-md)}
+.step-active .step-circle{background:var(--amber-md);color:#fff}
+.step-todo .step-circle{background:var(--bg);color:var(--ink-4);border:1.5px solid var(--border)}
+.step-label{font-size:10px;color:var(--ink-3);text-align:center;line-height:1.3}
+.step-done .step-label{color:var(--green)}
+.step-active .step-label{color:var(--amber);font-weight:500}
+.step-line{flex:0 0 24px;height:2px;background:var(--border);margin-bottom:16px}
+.step-line.done{background:var(--green-md)}
+
+/* ── カード ── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  margin-bottom:16px;
+  overflow:hidden;
+}
+.card-header{
+  padding:14px 16px 0;
+  display:flex;align-items:center;gap:8px;
+}
+.card-icon{font-size:20px}
+.card-title{font-size:14px;font-weight:600;color:var(--ink)}
+.card-desc{
+  font-size:12px;color:var(--ink-3);
+  padding:4px 16px 12px;line-height:1.5;
+}
+.card-body{padding:0 16px 16px}
+
+/* ── Googleカレンダーバッジ ── */
+.gcal-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;background:var(--gcal-lt);color:var(--gcal);
+  padding:2px 8px;border-radius:20px;font-weight:500;
+  margin-left:auto;
+}
+.gcal-badge svg{width:12px;height:12px}
+
+/* ── タスク行 ── */
+.task-list{display:flex;flex-direction:column;gap:6px;padding:0 16px}
+.task-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:var(--radius-sm);
+  background:var(--bg);
+  transition:background .15s;
+}
+.task-item.pending{background:var(--amber-lt);border:1px solid #b8d8c8}
+.task-check{
+  width:22px;height:22px;border-radius:5px;
+  border:1.5px solid var(--border);
+  background:var(--surface);
+  flex-shrink:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.task-check:hover{border-color:var(--amber-md)}
+.task-check.checked{background:var(--amber-md);border-color:var(--amber-md)}
+.task-check.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
+.task-text{flex:1;font-size:13px;color:var(--ink)}
+.task-text.done{text-decoration:line-through;color:var(--ink-4)}
+.task-time{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.task-cal{
+  display:inline-flex;align-items:center;gap:2px;
+  font-size:10px;background:var(--gcal-lt);color:var(--gcal);
+  padding:1px 6px;border-radius:10px;white-space:nowrap;
+}
+.task-pending-label{font-size:11px;color:var(--amber);font-weight:500;white-space:nowrap}
+.add-task-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:var(--ink-3);cursor:pointer;
+  padding:8px 16px 0;
+  transition:color .15s;
+}
+.add-task-btn:hover{color:var(--amber)}
+
+/* ── メモ入力 ── */
+.memo-wrap{
+  margin:10px 16px 0;
+  background:var(--bg);
+  border-radius:var(--radius-sm);
+  padding:10px 12px;
+}
+.memo-label{font-size:11px;color:var(--ink-3);margin-bottom:5px}
+textarea{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:9px 11px;
+  font-size:13px;
+  font-family:inherit;
+  color:var(--ink);
+  background:var(--surface);
+  resize:vertical;
+  min-height:72px;
+  transition:border-color .15s;
+  line-height:1.6;
+}
+textarea:focus{outline:none;border-color:var(--amber-md);box-shadow:0 0 0 2px var(--amber-lt)}
+textarea::placeholder{color:var(--ink-4)}
+
+/* ── レポート入力 ── */
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:block;font-size:12px;color:var(--ink-2);
+  font-weight:500;margin-bottom:5px;
+}
+.field label .req{color:var(--red);margin-left:2px}
+.field label .hint{font-size:11px;color:var(--ink-3);font-weight:400;margin-left:4px}
+
+/* ── コンディション（ストレスチェック） ── */
+.mood-row{display:flex;gap:8px}
+.mood-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 4px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);cursor:pointer;font-size:21px;font-family:inherit;
+  color:var(--ink-3);transition:border-color .15s,background .15s;
+}
+.mood-btn span{font-size:10px;font-weight:500}
+.mood-btn.active{border-color:var(--amber-md);background:var(--amber-lt);color:var(--amber)}
+.mood-warn-note{
+  display:none;margin-top:8px;font-size:11px;color:var(--red);
+  background:var(--red-lt);border:1px solid #e5aaaa;border-radius:var(--radius-sm);
+  padding:8px 10px;line-height:1.6;
+}
+.mood-warn-note.show{display:block}
+
+/* ── 指針タグ ── */
+.tag-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.tag{
+  padding:6px 14px;border-radius:20px;
+  font-size:13px;cursor:pointer;
+  border:1.5px solid var(--border);
+  color:var(--ink-2);background:var(--surface);
+  transition:all .15s;user-select:none;
+}
+.tag:hover{border-color:var(--amber-md);color:var(--amber)}
+.tag.on{
+  background:var(--amber-lt);color:var(--amber);
+  border-color:var(--amber-md);font-weight:500;
+}
+.ai-suggest{
+  display:flex;align-items:flex-start;gap:8px;
+  background:var(--amber-lt);border:1px solid #b8d8c8;
+  border-radius:var(--radius-sm);padding:9px 12px;
+  font-size:12px;color:var(--amber);
+}
+.ai-suggest-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+
+/* ── 金曜バナー ── */
+.friday-banner{
+  background:var(--friday-lt);
+  border:1.5px solid #f0c080;
+  border-radius:var(--radius);
+  padding:12px 16px;
+  display:flex;align-items:flex-start;gap:10px;
+  margin-bottom:16px;
+}
+.friday-banner-icon{font-size:24px;flex-shrink:0}
+.friday-banner-title{font-size:14px;font-weight:600;color:var(--friday);margin-bottom:2px}
+.friday-banner-desc{font-size:12px;color:#a06020;line-height:1.5}
+
+/* ── 感謝・称賛カード ── */
+.person-card{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  background:var(--bg);
+  border-radius:var(--radius-sm);
+  margin-bottom:7px;
+}
+.person-avatar{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;flex-shrink:0;
+}
+.av-green{background:var(--green-lt);color:var(--green)}
+.av-amber{background:var(--amber-lt);color:var(--amber)}
+.av-purple{background:var(--purple-lt);color:var(--purple)}
+.av-red{background:var(--red-lt);color:var(--red)}
+.person-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.person-input{flex:1}
+input[type=text]{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:7px 10px;
+  font-size:12px;font-family:inherit;
+  color:var(--ink);background:var(--surface);
+  transition:border-color .15s;
+}
+input[type=text]:focus{outline:none;border-color:var(--amber-md);box-shadow:0 0 0 2px var(--amber-lt)}
+input[type=text]::placeholder{color:var(--ink-4)}
+.remove-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--ink-4);font-size:18px;padding:4px;
+  flex-shrink:0;border-radius:var(--radius-sm);
+  transition:color .15s;
+}
+.remove-btn:hover{color:var(--red)}
+.add-person-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:var(--ink-3);cursor:pointer;
+  padding:6px 4px;
+  transition:color .15s;
+  background:none;border:none;font-family:inherit;
+}
+.add-person-btn:hover{color:var(--amber)}
+
+/* ── 振り返り ── */
+.reflection-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.reflection-box{border-radius:var(--radius-sm);padding:12px}
+.reflection-good{background:var(--green-lt);border:1px solid #b8d8c0}
+.reflection-bad{background:var(--red-lt);border:1px solid #f0b8b8}
+.reflection-label{
+  font-size:12px;font-weight:600;margin-bottom:6px;
+  display:flex;align-items:center;gap:5px;
+}
+.reflection-good .reflection-label{color:var(--green)}
+.reflection-bad  .reflection-label{color:var(--red)}
+.reflection-box textarea{
+  background:var(--surface);
+  border-color:transparent;
+  min-height:80px;font-size:12px;
+}
+.reflection-good textarea:focus{border-color:#80c090}
+.reflection-bad  textarea:focus{border-color:#f09090}
+.sub-label{font-size:11px;margin:6px 0 3px}
+.reflection-good .sub-label{color:var(--green)}
+.reflection-bad .sub-label{color:var(--red)}
+
+/* ── スコアスライダー ── */
+.slider-wrap{margin-bottom:10px}
+.slider-meta{
+  display:flex;justify-content:space-between;
+  font-size:12px;color:var(--ink-3);margin-bottom:4px;
+}
+.slider-val{font-weight:600;color:var(--amber)}
+input[type=range]{
+  width:100%;accent-color:var(--amber-md);
+  height:4px;cursor:pointer;
+}
+
+/* ── AIメッセージ ── */
+.ai-box{
+  background:var(--purple-lt);
+  border:1px solid #c8c4f4;
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:16px;
+  display:none;
+}
+.ai-box.show{display:block}
+.ai-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ai-orb{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--purple);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.ai-name{font-size:13px;font-weight:600;color:var(--purple)}
+.ai-sub{font-size:11px;color:#6060c0}
+.ai-bubble{
+  background:var(--surface);
+  border:1px solid #c8c4f4;
+  border-radius:var(--radius-sm);
+  padding:12px 14px;
+  font-size:13px;color:var(--ink);
+  line-height:1.8;
+  margin-bottom:10px;
+}
+.ai-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.ai-tag{
+  font-size:11px;padding:3px 10px;
+  border-radius:20px;
+  background:var(--green-lt);color:var(--green);
+}
+.ai-footer{
+  background:var(--purple-lt);
+  border-radius:var(--radius-sm);
+  padding:9px 12px;
+  font-size:12px;color:var(--purple);
+  line-height:1.6;
+}
+
+/* ── 偉人カード ── */
+.wisdom-card{
+  border-radius:var(--radius);
+  padding:18px;
+  text-align:center;
+  margin-bottom:16px;
+  display:none;
+}
+.wisdom-card.show{display:block}
+.wisdom-type{font-size:11px;font-weight:600;letter-spacing:.05em;margin-bottom:8px}
+.wisdom-main{font-size:26px;font-weight:700;letter-spacing:.08em;margin-bottom:5px;line-height:1.3}
+.wisdom-reading{font-size:12px;opacity:.65;margin-bottom:10px}
+.wisdom-divider{width:36px;height:2px;margin:0 auto 10px;border-radius:2px}
+.wisdom-meaning{
+  font-size:12px;line-height:1.75;text-align:left;
+  padding:9px 12px;border-radius:var(--radius-sm);
+  background:rgba(255,255,255,.65);
+  margin-bottom:12px;
+}
+.wisdom-actions{display:flex;justify-content:center;gap:8px}
+.wisdom-btn{
+  display:flex;align-items:center;gap:5px;
+  font-size:12px;padding:6px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--surface);
+  cursor:pointer;color:var(--ink-2);
+  transition:background .15s;font-family:inherit;
+}
+.wisdom-btn:hover{background:var(--bg)}
+
+/* ── 確認ボックス ── */
+.check-box{
+  background:var(--green-lt);
+  border:1px solid #b8d8c0;
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:16px;
+}
+.check-title{font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px}
+.check-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:6px;margin-bottom:14px;
+}
+.check-item{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:var(--green);
+}
+.check-ok{font-size:15px}
+.submit-btn{
+  width:100%;padding:14px;
+  border-radius:var(--radius);
+  background:var(--amber-md);
+  border:none;color:#fff;
+  font-size:16px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .15s;
+  letter-spacing:.02em;
+}
+.submit-btn:hover{background:var(--amber-btn)}
+.submit-note{font-size:11px;color:var(--green);text-align:center;margin-top:7px}
+
+/* ── セクションバッジ ── */
+.section-badge{
+  display:inline-flex;align-items:center;
+  font-size:10px;padding:2px 8px;border-radius:20px;
+  font-weight:500;margin-left:8px;
+  background:var(--friday-lt);color:var(--friday);
+  border:1px solid #f0c080;
+}
+
+/* ── トースト ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--ink);color:#fff;
+  font-size:13px;padding:10px 20px;border-radius:24px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  white-space:nowrap;pointer-events:none;z-index:999;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── 完了オーバーレイ ── */
+.complete-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(30,28,24,.65);
+  z-index:200;
+  align-items:center;justify-content:center;
+}
+.complete-overlay.show{display:flex}
+.complete-modal{
+  background:var(--surface);
+  border-radius:16px;
+  padding:36px 32px;
+  max-width:380px;width:90%;
+  text-align:center;
+  box-shadow:0 8px 40px rgba(0,0,0,.2);
+}
+.complete-emoji{font-size:52px;margin-bottom:12px}
+.complete-title{font-size:20px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.complete-desc{font-size:13px;color:var(--ink-3);line-height:1.6;margin-bottom:20px}
+.complete-btn{
+  width:100%;padding:12px;border-radius:var(--radius);
+  background:var(--amber-md);border:none;color:#fff;
+  font-size:15px;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:background .15s;
+}
+.complete-btn:hover{background:var(--amber-btn)}
+
+/* ── モバイルナビ ── */
+.mobile-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:6px 0 max(6px,env(safe-area-inset-bottom));
+  z-index:100;
+}
+.mobile-nav-inner{display:flex;justify-content:space-around}
+.mnav-btn{
+  display:flex;flex-direction:column;align-items:center;
+  gap:2px;padding:4px 12px;
+  border:none;background:none;cursor:pointer;
+  color:var(--ink-3);font-size:10px;font-family:inherit;
+  border-radius:var(--radius-sm);transition:color .15s;
+}
+.mnav-btn.active{color:var(--amber)}
+.mnav-btn svg{width:22px;height:22px}
+
+/* ── レスポンシブ ── */
+@media(max-width:600px){
+  .nav-link{display:none}
+  .page{padding:16px 16px 80px}
+  .reflection-grid{grid-template-columns:1fr}
+  .check-grid{grid-template-columns:1fr}
+  .mobile-nav{display:block}
+  .stepper{padding:12px 10px}
+  .step-label{font-size:9px}
+}
+@media(max-width:480px){
+  .step-line{flex:0 0 14px}
+  .step-circle{width:24px;height:24px;font-size:11px}
+}
+</style>
+<script src="gate.js"></script>
+</head>
+<body>
+
+<!-- ナビ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="location.href='05_manager_home.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      Hoshin
+    </div>
+    <div class="nav-link" onclick="location.href='05_manager_home.html'">ホーム</div>
+    <div class="nav-link active">日報を書く</div>
+    <div class="nav-link" onclick="location.href='05_manager_home.html'">部下の日報</div>
+    <div class="nav-link" onclick="location.href='03_policy_editor.html'">指針書を読む</div>
+    <div class="nav-right">
+      <div class="nav-avatar" onclick="HoshinReportForm.showToast('プロフィール設定')">田</div>
+    </div>
+  </div>
+</nav>
+
+<main class="page">
+
+  <!-- ページタイトル -->
+  <div style="margin-bottom:20px">
+    <h1 style="font-size:21px;font-weight:700;letter-spacing:-.02em;margin-bottom:3px">今日の日報を書く</h1>
+    <p style="font-size:12px;color:var(--ink-3)">2024年8月9日（金）　田中 一郎　/ 営業チーム リーダー</p>
+  </div>
+
+  <!-- ステッパー -->
+  <div class="stepper" id="stepper">
+    <div class="step step-done" onclick="HoshinReportForm.goStep(1)">
+      <div class="step-circle">✓</div>
+      <div class="step-label">今日の<br>タスク</div>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step step-done" onclick="HoshinReportForm.goStep(2)">
+      <div class="step-circle">✓</div>
+      <div class="step-label">明日の<br>タスク</div>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step step-active" id="step3" onclick="HoshinReportForm.goStep(3)">
+      <div class="step-circle">3</div>
+      <div class="step-label">今日の<br>報告</div>
+    </div>
+    <div class="step-line" id="line34"></div>
+    <div class="step step-todo" id="step4" onclick="HoshinReportForm.goStep(4)">
+      <div class="step-circle">4</div>
+      <div class="step-label">指針を<br>選ぶ</div>
+    </div>
+    <div class="step-line" id="line45"></div>
+    <div class="step step-todo" id="step5" onclick="HoshinReportForm.goStep(5)">
+      <div class="step-circle">5</div>
+      <div class="step-label">感謝・<br>頑張り</div>
+    </div>
+    <div class="step-line" id="line56"></div>
+    <div class="step step-todo" id="step6" onclick="HoshinReportForm.goStep(6)">
+      <div class="step-circle">6</div>
+      <div class="step-label">送信</div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 1: 今日のタスク ===== -->
+  <div class="card" id="section-task-today">
+    <div class="card-header">
+      <span class="card-icon">📅</span>
+      <span class="card-title">今日のタスク（完了チェック）</span>
+      <div class="gcal-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Googleカレンダーから取得
+      </div>
+    </div>
+    <p class="card-desc">完了したものにチェックを入れてください。未完了はその理由を書きましょう。</p>
+
+    <div class="task-list">
+      <div class="task-item" id="task1">
+        <div class="task-check checked" id="chk1" onclick="HoshinReportForm.toggleTask(1)"></div>
+        <span class="task-text done" id="txt1">チーム全体 週次ミーティング</span>
+        <span class="task-time">10:00〜11:00</span>
+        <span class="task-cal">📅 カレンダー</span>
+      </div>
+      <div class="task-item" id="task2">
+        <div class="task-check checked" id="chk2" onclick="HoshinReportForm.toggleTask(2)"></div>
+        <span class="task-text done" id="txt2">山本さん 1on1 面談</span>
+        <span class="task-time">15:00〜15:30</span>
+        <span class="task-cal">📅 カレンダー</span>
+      </div>
+      <div class="task-item pending" id="task3">
+        <div class="task-check" id="chk3" onclick="HoshinReportForm.toggleTask(3)"></div>
+        <span class="task-text" id="txt3">月次売上レポート提出</span>
+        <span class="task-pending-label">未完了</span>
+        <span class="task-cal">📅 カレンダー</span>
+      </div>
+      <div class="task-item pending" id="task4">
+        <div class="task-check" id="chk4" onclick="HoshinReportForm.toggleTask(4)"></div>
+        <span class="task-text" id="txt4">佐藤さんへの声かけ</span>
+        <span class="task-pending-label">未完了</span>
+        <span class="task-cal">📅 カレンダー</span>
+      </div>
+    </div>
+    <div class="add-task-btn" onclick="HoshinReportForm.showToast('タスクを追加できます')">＋ タスクを手動で追加する</div>
+    <div class="memo-wrap">
+      <div class="memo-label">未完了のタスクへのひとこと（理由・明日への引き継ぎ）</div>
+      <textarea placeholder="例：月次レポートは数字の再確認が必要で明日に持ち越しました。">月次売上レポートは数字の再確認が必要で明日の午前中に完了させます。佐藤さんへの声かけは今日中に必ず行います。</textarea>
+    </div>
+    <div style="padding:12px 16px 14px">
+      <button style="width:100%;padding:10px;border-radius:var(--radius-sm);background:var(--amber-lt);border:1.5px solid var(--amber-md);color:var(--amber);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s" onclick="HoshinReportForm.goStep(2);HoshinReportForm.showToast('今日のタスクを保存しました')">次へ：明日のタスク →</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 2: 明日のタスク ===== -->
+  <div class="card" id="section-task-tmr">
+    <div class="card-header">
+      <span class="card-icon">🗓️</span>
+      <span class="card-title">明日のタスク（確認・準備メモ）</span>
+      <div class="gcal-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Googleカレンダーから取得
+      </div>
+    </div>
+    <p class="card-desc">明日の予定を確認して、必要な準備をメモしましょう。</p>
+
+    <div class="task-list">
+      <div class="task-item">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0"></div>
+        <span class="task-text">部下の未コメント日報の確認</span>
+        <span class="task-time">09:00〜</span>
+        <span class="task-cal">📅 カレンダー</span>
+      </div>
+      <div class="task-item">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0"></div>
+        <span class="task-text">経営者への週次報告</span>
+        <span class="task-time">14:00〜14:30</span>
+        <span class="task-cal">📅 カレンダー</span>
+      </div>
+      <div class="task-item">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0"></div>
+        <span class="task-text">新規商談の同行（田中一郎）</span>
+        <span class="task-time">16:00〜</span>
+        <span class="task-cal">📅 カレンダー</span>
+      </div>
+    </div>
+    <div class="add-task-btn" onclick="HoshinReportForm.showToast('明日のタスクを追加できます')">＋ 明日のタスクを手動で追加する</div>
+    <div class="memo-wrap">
+      <div class="memo-label">明日に向けての準備・気になること</div>
+      <textarea placeholder="例：週次報告の前に、チームの提出率データを整理しておく。">経営者への週次報告の前に、チームの提出率と未コメント状況を整理しておく。佐藤さんの状況も併せて共有する。</textarea>
+    </div>
+    <div style="padding:12px 16px 14px">
+      <button style="width:100%;padding:10px;border-radius:var(--radius-sm);background:var(--amber-lt);border:1.5px solid var(--amber-md);color:var(--amber);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="HoshinReportForm.goStep(3);HoshinReportForm.showToast('明日のタスクを保存しました')">次へ：今日の報告 →</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 3: 今日の報告 ===== -->
+  <div class="card" id="section-report">
+    <div class="card-header">
+      <span class="card-icon">📝</span>
+      <span class="card-title">今日の報告</span>
+    </div>
+    <p class="card-desc">経営者への報告になります。正直に、率直に書いてください。</p>
+    <div class="card-body">
+      <div class="field">
+        <label>今日やったこと・起きたこと <span class="req">*</span></label>
+        <textarea placeholder="例：週次ミーティングでチームの目標進捗を確認した。山本さんと1on1を実施した。">週次ミーティングでチームの目標進捗を確認した。山本さんと1on1を実施し、業務量の調整について相談に乗った。佐藤さんの日報未提出が続いているため、声をかける時間を確保できていない。</textarea>
+      </div>
+      <div class="field">
+        <label>気づいたこと・学んだこと</label>
+        <textarea placeholder="例：1on1で率直に話してもらうには、まず自分から近況を話すことが有効だと感じた。">1on1で率直に話してもらうには、まず自分から近況を話すことが有効だと感じた。山本さんの業務量は思ったより多く、タスクの再配分が必要かもしれない。</textarea>
+      </div>
+      <div class="field">
+        <label>明日に向けてひとこと</label>
+        <textarea placeholder="例：佐藤さんに必ず声をかける。" style="min-height:52px">佐藤さんに必ず声をかける。経営者への週次報告の準備を朝一で終わらせる。</textarea>
+      </div>
+      <div class="field">
+        <label>今日のコンディション<span class="hint">※経営者にのみ共有されます</span></label>
+        <div class="mood-row" id="mood-row">
+          <button type="button" class="mood-btn active" data-mood="normal" onclick="HoshinReportForm.selectMood(this,'normal')">🙂<span>普通</span></button>
+          <button type="button" class="mood-btn" data-mood="good" onclick="HoshinReportForm.selectMood(this,'good')">😊<span>良好</span></button>
+          <button type="button" class="mood-btn" data-mood="tired" onclick="HoshinReportForm.selectMood(this,'tired')">😟<span>少しお疲れ</span></button>
+          <button type="button" class="mood-btn" data-mood="bad" onclick="HoshinReportForm.selectMood(this,'bad')">😣<span>ひと息つきたい</span></button>
+        </div>
+        <div class="mood-warn-note" id="mood-warn-note">この結果は経営者に共有され、必要に応じて1on1などのサポートにつながります。無理せず、正直に選んでください。</div>
+      </div>
+      <button style="width:100%;padding:10px;border-radius:var(--radius-sm);background:var(--amber-lt);border:1.5px solid var(--amber-md);color:var(--amber);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="HoshinReportForm.goStep(4);HoshinReportForm.showToast('今日の報告を保存しました')">次へ：指針を選ぶ →</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 4: 指針タグ ===== -->
+  <div class="card" id="section-tags">
+    <div class="card-header">
+      <span class="card-icon">🏷️</span>
+      <span class="card-title">今日の行動に近い指針を選んでください</span>
+    </div>
+    <p class="card-desc">当てはまるものをタップしてください（複数OK）。選ぶと日報が会社の指針と繋がります。</p>
+    <div class="card-body">
+      <div class="tag-grid">
+        <div class="tag" onclick="HoshinReportForm.toggleTag(this)">お客様第一</div>
+        <div class="tag" onclick="HoshinReportForm.toggleTag(this)">誠実に行動する</div>
+        <div class="tag on" onclick="HoshinReportForm.toggleTag(this)">改善を続ける</div>
+        <div class="tag" onclick="HoshinReportForm.toggleTag(this)">挑戦を楽しむ</div>
+        <div class="tag on" onclick="HoshinReportForm.toggleTag(this)">チームで助け合う</div>
+        <div class="tag" onclick="HoshinReportForm.toggleTag(this)">小さく試す</div>
+      </div>
+      <div class="ai-suggest">
+        <div class="ai-suggest-icon">✨</div>
+        <div style="font-size:12px">AIが「チームで助け合う」「改善を続ける」を提案しています。このまま送っても大丈夫です。</div>
+      </div>
+      <div style="margin-top:12px">
+        <button style="width:100%;padding:10px;border-radius:var(--radius-sm);background:var(--amber-lt);border:1.5px solid var(--amber-md);color:var(--amber);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="HoshinReportForm.goStep(5);HoshinReportForm.showToast('指針タグを保存しました')">次へ：感謝・頑張った人 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 金曜バナー ===== -->
+  <div class="friday-banner" id="section-friday-banner">
+    <div class="friday-banner-icon">📆</div>
+    <div>
+      <div class="friday-banner-title">今日は金曜日です — 1週間お疲れさまでした</div>
+      <div class="friday-banner-desc">週末限定の項目が追加されています。感謝・称賛・1週間の振り返りを記録しましょう。</div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 5a: 感謝 ===== -->
+  <div class="card" id="section-thanks">
+    <div class="card-header">
+      <span class="card-icon">💛</span>
+      <span class="card-title">今週、感謝したい人</span>
+      <span class="section-badge">毎週金曜限定</span>
+    </div>
+    <p class="card-desc">今週助けてもらった人、一緒に頑張った人への感謝を書きましょう。相手に通知が届きます。</p>
+    <div class="card-body">
+      <div id="thanks-list">
+        <div class="person-card">
+          <div class="person-avatar av-purple">山</div>
+          <div class="person-input">
+            <div class="person-name">山本 次郎</div>
+            <input type="text" value="1on1で本音を話してくれてありがとう。おかげでチームの課題が見えました。" placeholder="感謝のひとこと">
+          </div>
+          <button class="remove-btn" onclick="HoshinReportForm.removePerson(this)">×</button>
+        </div>
+      </div>
+      <button class="add-person-btn" onclick="HoshinReportForm.addPerson('thanks')">＋ 感謝したい人を追加する</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 5b: 称賛 ===== -->
+  <div class="card" id="section-praise">
+    <div class="card-header">
+      <span class="card-icon">⭐</span>
+      <span class="card-title">今週、頑張っていた人</span>
+      <span class="section-badge">毎週金曜限定</span>
+    </div>
+    <p class="card-desc">今週特に頑張っていたと思う人を記録します。経営者が確認し、称賛の機会に活用されます。</p>
+    <div class="card-body">
+      <div id="praise-list">
+        <div class="person-card">
+          <div class="person-avatar av-green">田</div>
+          <div class="person-input">
+            <div class="person-name">田中 一郎（メンバー）</div>
+            <input type="text" value="新規顧客のB社を初訪問から丁寧にヒアリングし、次回提案の土台を作ってくれた。" placeholder="どんなところが頑張っていたか">
+          </div>
+          <button class="remove-btn" onclick="HoshinReportForm.removePerson(this)">×</button>
+        </div>
+        <div class="person-card">
+          <div class="person-avatar av-amber">鈴</div>
+          <div class="person-input">
+            <div class="person-name">鈴木 花子</div>
+            <input type="text" placeholder="どんなところが頑張っていたか（例：スプリントレビューのファシリテーションが良かった）">
+          </div>
+          <button class="remove-btn" onclick="HoshinReportForm.removePerson(this)">×</button>
+        </div>
+      </div>
+      <button class="add-person-btn" onclick="HoshinReportForm.addPerson('praise')">＋ 頑張っていた人を追加する</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 5c: 1週間の振り返り ===== -->
+  <div class="card" id="section-reflect">
+    <div class="card-header">
+      <span class="card-icon">🌟</span>
+      <span class="card-title">1週間の振り返り</span>
+      <span class="section-badge">毎週金曜限定</span>
+    </div>
+    <p class="card-desc">今週を率直に振り返ってください。AIが読んで、あなたへのメッセージを返します。</p>
+    <div class="card-body">
+      <div class="reflection-grid">
+        <div class="reflection-box reflection-good">
+          <div class="reflection-label">✅ 今週よかったこと</div>
+          <textarea placeholder="例：&#10;・チームの提出率が改善した&#10;・1on1で本音を聞けた">チームの日報提出率が先月より+4%改善した。山本さんとの1on1で普段聞けない本音を聞けた。
+田中さんのB社対応がチーム内で良い事例として共有できた。</textarea>
+          <div class="sub-label">特に嬉しかった出来事</div>
+          <textarea placeholder="例：チームの雰囲気が良くなってきた" style="min-height:44px">週次ミーティングでチームから前向きな発言が増えてきたこと。</textarea>
+        </div>
+        <div class="reflection-box reflection-bad">
+          <div class="reflection-label">⚠️ 今週の反省点</div>
+          <textarea placeholder="例：&#10;・佐藤さんへの声かけが後回しになった">佐藤さんへの声かけが日々のタスクに追われて後回しになってしまった。
+「挑戦を楽しむ」指針についてチームで話す機会を作れなかった。</textarea>
+          <div class="sub-label">来週に活かすために変えること</div>
+          <textarea placeholder="例：毎朝1件は必ず声かけの時間を確保する" style="min-height:44px">毎朝、声かけが必要なメンバーを1名決めてから業務を始める。朝礼で「挑戦」の話題を1つ入れる。</textarea>
+        </div>
+      </div>
+
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:500;margin-bottom:10px">今週の自己採点</div>
+        <div class="slider-wrap">
+          <div class="slider-meta">
+            <span>指針を意識できた</span>
+            <span class="slider-val" id="sv1">6</span>
+          </div>
+          <input type="range" min="1" max="10" value="6" step="1" oninput="document.getElementById('sv1').textContent=this.value">
+        </div>
+        <div class="slider-wrap">
+          <div class="slider-meta">
+            <span>チームをサポートできた</span>
+            <span class="slider-val" id="sv2">7</span>
+          </div>
+          <input type="range" min="1" max="10" value="7" step="1" oninput="document.getElementById('sv2').textContent=this.value">
+        </div>
+        <div class="slider-wrap" style="margin-bottom:0">
+          <div class="slider-meta">
+            <span>来週が楽しみな度</span>
+            <span class="slider-val" id="sv3">6</span>
+          </div>
+          <input type="range" min="1" max="10" value="6" step="1" oninput="document.getElementById('sv3').textContent=this.value">
+        </div>
+      </div>
+
+      <button style="width:100%;padding:11px;border-radius:var(--radius-sm);background:var(--purple-lt);border:1.5px solid #c8c4f4;color:var(--purple);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px" onclick="HoshinReportForm.generateAI(this)">✨ AIからのメッセージを受け取る</button>
+    </div>
+  </div>
+
+  <!-- AIメッセージ -->
+  <div class="ai-box" id="ai-box">
+    <div class="ai-header">
+      <div class="ai-orb">✦</div>
+      <div>
+        <div class="ai-name">Hoshin AI からのメッセージ</div>
+        <div class="ai-sub">今週の振り返りを読みました</div>
+      </div>
+    </div>
+    <div class="ai-bubble">
+      田中さん、今週もチームを支えてくれてお疲れさまでした。<br><br>
+      山本さんとの1on1で本音を引き出せたこと、<strong>それはマネジメントとして大きな一歩です</strong>。数字だけでは見えないチームの状態に気づけたことを誇りに思ってください。<br><br>
+      佐藤さんへの声かけが後回しになったことは、来週の最優先事項にしましょう。<strong>「毎朝1名決めてから始める」という仕組み化</strong>は、忙しい中でも実行しやすい良いアイデアです。
+    </div>
+    <div class="ai-tags">
+      <span class="ai-tag">チームへの傾聴力</span>
+      <span class="ai-tag">仕組み化の工夫</span>
+      <span class="ai-tag">自己改善の意識</span>
+    </div>
+    <div class="ai-footer">来週の提案：朝礼で「挑戦を楽しむ」指針にまつわる小さな話題を1つ共有してみましょう。チームの言及率アップにつながります。</div>
+  </div>
+
+  <!-- 偉人の言葉 -->
+  <div class="wisdom-card" id="wisdom-card" style="background:linear-gradient(135deg,#eeedfe,#e4f3ed);border:1px solid #c8c4f4">
+    <div class="wisdom-type" style="color:var(--purple)">今週の田中さんへ贈る四字熟語</div>
+    <div class="wisdom-main" style="color:var(--purple)">率先垂範</div>
+    <div class="wisdom-reading" style="color:var(--purple)">そっせんすいはん</div>
+    <div class="wisdom-divider" style="background:var(--purple);opacity:.4"></div>
+    <div class="wisdom-meaning" style="color:#3a3488">上に立つ者が自ら模範を示すこと。田中さんが自ら日報を書き振り返りを続けることが、チームへの最大のメッセージです。</div>
+    <div class="wisdom-actions">
+      <button class="wisdom-btn" onclick="HoshinReportForm.rotateWisdom()">🔄 別の言葉</button>
+      <button class="wisdom-btn" onclick="HoshinReportForm.showToast('この言葉を保存しました ✨')">🔖 保存する</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 6: 確認・送信 ===== -->
+  <div class="check-box" id="section-submit">
+    <div class="check-title">✅ 送信前の確認</div>
+    <div class="check-grid">
+      <div class="check-item"><span class="check-ok">✓</span> 今日のタスク：記入済み</div>
+      <div class="check-item"><span class="check-ok">✓</span> 明日のタスク：記入済み</div>
+      <div class="check-item"><span class="check-ok">✓</span> 今日の報告：記入済み</div>
+      <div class="check-item"><span class="check-ok">✓</span> 指針タグ：2つ選択</div>
+      <div class="check-item"><span class="check-ok">✓</span> 感謝したい人：1名</div>
+      <div class="check-item"><span class="check-ok">✓</span> 頑張った人：2名</div>
+      <div class="check-item"><span class="check-ok">✓</span> 週末振り返り：記入済み</div>
+      <div class="check-item"><span class="check-ok">✓</span> AIメッセージ：受信済み</div>
+    </div>
+    <button class="submit-btn" onclick="HoshinReportForm.submitReport()">
+      📤 日報を経営者に送る
+    </button>
+    <div class="submit-note">送ると山田社長に通知が届きます。感謝・称賛も相手に通知されます。</div>
+  </div>
+
+</main>
+
+<!-- モバイルナビ -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mnav-btn" onclick="location.href='05_manager_home.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      ホーム
+    </button>
+    <button class="mnav-btn active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      日報
+    </button>
+    <button class="mnav-btn" onclick="location.href='05_manager_home.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      部下の日報
+    </button>
+    <button class="mnav-btn" onclick="location.href='03_policy_editor.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      指針書
+    </button>
+  </div>
+</nav>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<!-- 完了オーバーレイ -->
+<div class="complete-overlay" id="complete-overlay">
+  <div class="complete-modal">
+    <div class="complete-emoji">🎉</div>
+    <div class="complete-title">日報を送りました！</div>
+    <div class="complete-desc">
+      山田社長に通知が届きました。<br>
+      山本さんに感謝の通知を送りました。<br>
+      田中さん・鈴木さんに称賛の通知を送りました。<br><br>
+      今週もお疲れさまでした。よい週末を！
+    </div>
+    <button class="complete-btn" onclick="HoshinReportForm.closeComplete()">ホームに戻る</button>
+  </div>
+</div>
+
+<script src="data/store.js"></script>
+<script src="data/team.js"></script>
+<script src="data/reports.js"></script>
+<script src="shared/report-form.js"></script>
+<script>
+HoshinReportForm.init({
+  isFriday: true, // デモ用固定値（本番は new Date().getDay() === 5 に変更）
+  memberId: 'tanaka',
+  homeUrl: '05_manager_home.html',
+  stressShareTarget: '経営者',
+  memberList: [
+    { name: '山本 次郎', initial: '山', color: '#eeedfe', textColor: '#3d3591' },
+    { name: '鈴木 花子', initial: '鈴', color: '#e4f3ed', textColor: '#0e5c46' },
+    { name: '佐藤 健太', initial: '佐', color: '#fdeaea', textColor: '#b83232' },
+    { name: '田中 一郎（メンバー）', initial: '田', color: '#e8f1eb', textColor: '#2d5a3d' },
+  ],
+  addedThanks: [0],
+  addedPraise: [3, 1],
+  wisdoms: [
+    {
+      type: '今週の田中さんへ贈る四字熟語',
+      main: '率先垂範',
+      reading: 'そっせんすいはん',
+      meaning: '上に立つ者が自ら模範を示すこと。田中さんが自ら日報を書き振り返りを続けることが、チームへの最大のメッセージです。',
+      color: ['var(--purple)', '#eeedfe', '1px solid #c8c4f4', 'linear-gradient(135deg,#eeedfe,#e4f3ed)']
+    },
+    {
+      type: '今週の田中さんへ贈ることわざ',
+      main: '雨降って地固まる',
+      reading: 'あめふってじかたまる',
+      meaning: '困難や揉め事のあとは、かえって物事が安定すること。山本さんとの1on1で見えた課題は、チームを強くする良いきっかけになります。',
+      color: ['var(--green)', '#e8f1eb', '1px solid #b8d8c0', 'linear-gradient(135deg,#e8f1eb,#e4f3ed)']
+    },
+    {
+      type: '今週の田中さんへ — 偉人の言葉',
+      main: '"リーダーは道を知り、その道を歩み、その道を示す"',
+      reading: '— ジョン・C・マクスウェル',
+      meaning: '田中さん自身が体現し続けることが、チームを動かす最大の力です。言葉より行動が先です。',
+      color: ['var(--amber)', 'var(--amber-lt)', '1px solid #b8d8c8', 'linear-gradient(135deg,#e4f3ed,#fff4e6)']
+    }
+  ]
+});
+</script>
+</body>
+</html>

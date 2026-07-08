@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoshin — サインイン</title>
+<style>
+:root {
+  --ink:        #1e1c18;
+  --ink-2:      #4a4740;
+  --ink-3:      #8a877e;
+  --ink-4:      #c4c1b8;
+  --bg:         #f4f2ed;
+  --surface:    #ffffff;
+  --border:     #e2dfd6;
+  --focus:      #2d5a3d;
+
+  /* ロール別カラー */
+  --owner-main: #2d5a3d;
+  --owner-lt:   #e4f3ed;
+  --owner-md:   #1a8060;
+  --mgr-main:   #1a4a8a;
+  --mgr-lt:     #e4edf8;
+  --mgr-md:     #2a6acc;
+  --mbr-main:   #8a4f10;
+  --mbr-lt:     #fef3e2;
+  --mbr-md:     #c07812;
+
+  --radius:     12px;
+  --radius-sm:  8px;
+  --shadow:     0 2px 8px rgba(0,0,0,.08);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,.12);
+
+  /* アクティブロールカラー（JS切り替え） */
+  --active-main: var(--owner-main);
+  --active-lt:   var(--owner-lt);
+  --active-md:   var(--owner-md);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── 背景装飾 ── */
+.bg-deco{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  overflow:hidden;
+}
+.bg-circle{
+  position:absolute;border-radius:50%;opacity:.06;
+}
+.bg-c1{
+  width:600px;height:600px;
+  background:var(--owner-main);
+  top:-200px;left:-200px;
+}
+.bg-c2{
+  width:400px;height:400px;
+  background:var(--mgr-main);
+  bottom:-100px;right:-100px;
+}
+.bg-c3{
+  width:200px;height:200px;
+  background:var(--mbr-main);
+  top:40%;left:60%;
+}
+
+/* ── ラッパー ── */
+.wrapper{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 20px;
+  position:relative;z-index:1;
+}
+
+/* ── カード ── */
+.login-card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);
+  width:100%;max-width:420px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+
+/* ── カードヘッダー ── */
+.card-header{
+  padding:28px 32px 20px;
+  text-align:center;
+}
+.logo{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:22px;font-weight:800;
+  letter-spacing:-.03em;
+  color:var(--ink);
+  margin-bottom:20px;
+  text-decoration:none;
+}
+.logo-icon{
+  width:36px;height:36px;
+  background:var(--owner-main);
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .3s;
+}
+.logo-icon svg{width:20px;height:20px;color:#fff}
+
+/* ── ロール切り替えタブ ── */
+.role-tabs{
+  display:flex;
+  background:var(--bg);
+  border-radius:10px;
+  padding:4px;
+  gap:3px;
+  margin-bottom:4px;
+}
+.role-tab{
+  flex:1;padding:8px 6px;
+  border-radius:7px;
+  font-size:12px;font-weight:500;
+  color:var(--ink-3);
+  cursor:pointer;
+  transition:all .2s;
+  text-align:center;
+  user-select:none;
+  border:none;background:none;
+  font-family:inherit;
+  display:flex;flex-direction:column;
+  align-items:center;gap:3px;
+}
+.role-tab-icon{font-size:16px}
+.role-tab.active{
+  background:var(--surface);
+  color:var(--ink);
+  box-shadow:0 1px 4px rgba(0,0,0,.1);
+  font-weight:600;
+}
+.role-tab.active.owner{color:var(--owner-main)}
+.role-tab.active.mgr  {color:var(--mgr-main)}
+.role-tab.active.mbr  {color:var(--mbr-main)}
+
+.role-desc{
+  font-size:11px;color:var(--ink-3);
+  text-align:center;margin-bottom:0;
+  min-height:16px;
+  transition:opacity .2s;
+}
+
+/* ── フォームエリア ── */
+.card-body{padding:24px 32px 28px}
+
+/* ── スクリーン切り替え ── */
+.screen{display:none}
+.screen.active{display:block}
+
+/* ── フォーム部品 ── */
+.field{margin-bottom:16px}
+.field-label{
+  display:block;font-size:12px;font-weight:500;
+  color:var(--ink-2);margin-bottom:5px;
+}
+.input-wrap{position:relative}
+.field-input{
+  width:100%;
+  border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:11px 14px;
+  font-size:14px;font-family:inherit;
+  color:var(--ink);background:var(--surface);
+  transition:border-color .15s,box-shadow .15s;
+  appearance:none;
+}
+.field-input:focus{
+  outline:none;
+  border-color:var(--active-col, var(--owner-main));
+  box-shadow:0 0 0 3px var(--active-shadow, var(--owner-lt));
+}
+.field-input::placeholder{color:var(--ink-4)}
+.field-input.has-icon{padding-left:42px}
+.input-icon{
+  position:absolute;left:13px;top:50%;
+  transform:translateY(-50%);
+  font-size:17px;
+  pointer-events:none;
+  opacity:.5;
+}
+.input-toggle{
+  position:absolute;right:12px;top:50%;
+  transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  font-size:17px;color:var(--ink-3);padding:4px;
+  border-radius:5px;transition:color .15s;
+}
+.input-toggle:hover{color:var(--ink)}
+.field-hint{
+  font-size:11px;color:var(--ink-3);
+  margin-top:4px;line-height:1.5;
+}
+.field-error{
+  font-size:11px;color:#b83232;
+  margin-top:4px;
+  display:none;
+}
+.field-error.show{display:block}
+
+/* ── チェックボックス ── */
+.check-row{
+  display:flex;align-items:center;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+.check-label{
+  display:flex;align-items:center;gap:7px;
+  font-size:13px;color:var(--ink-2);cursor:pointer;
+}
+.check-box{
+  width:18px;height:18px;border-radius:4px;
+  border:1.5px solid var(--border);
+  background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;cursor:pointer;
+}
+.check-box.checked{
+  border-color:var(--owner-main);
+  background:var(--owner-main);
+}
+.check-box.checked::after{
+  content:'✓';color:#fff;font-size:11px;font-weight:700;
+}
+.forgot-link{
+  font-size:12px;color:var(--ink-3);
+  cursor:pointer;text-decoration:underline;
+  transition:color .15s;
+  background:none;border:none;font-family:inherit;
+  padding:0;
+}
+.forgot-link:hover{color:var(--ink)}
+
+/* ── メインボタン ── */
+.btn-main{
+  width:100%;padding:13px;
+  border-radius:var(--radius-sm);
+  background:var(--owner-main);
+  border:none;color:#fff;
+  font-size:15px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .15s,transform .1s;
+  letter-spacing:.01em;
+}
+.btn-main:hover{filter:brightness(1.08)}
+.btn-main:active{transform:scale(.98)}
+.btn-sub{
+  width:100%;padding:11px;
+  border-radius:var(--radius-sm);
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  color:var(--ink-2);
+  font-size:14px;font-weight:500;
+  cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:border-color .15s,background .15s;
+  margin-top:10px;
+}
+.btn-sub:hover{border-color:var(--ink-3);background:var(--bg)}
+
+/* ── 区切り線 ── */
+.divider{
+  display:flex;align-items:center;gap:12px;
+  margin:18px 0;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+.divider-text{font-size:12px;color:var(--ink-4);white-space:nowrap}
+
+/* ── リンク行 ── */
+.link-row{
+  text-align:center;margin-top:18px;
+  font-size:13px;color:var(--ink-3);
+}
+.link-btn{
+  background:none;border:none;cursor:pointer;
+  font-family:inherit;font-size:13px;
+  font-weight:600;text-decoration:underline;
+  transition:color .15s;padding:0;
+}
+
+/* ── ロールごとのカラー変数（JS設定） ── */
+.role-owner .logo-icon{background:var(--owner-main)}
+.role-owner .btn-main{background:var(--owner-main)}
+.role-owner .check-box.checked{border-color:var(--owner-main);background:var(--owner-main)}
+.role-owner .field-input:focus{border-color:var(--owner-main);box-shadow:0 0 0 3px var(--owner-lt)}
+.role-owner .link-btn{color:var(--owner-main)}
+
+.role-mgr .logo-icon{background:var(--mgr-main)}
+.role-mgr .btn-main{background:var(--mgr-main)}
+.role-mgr .check-box.checked{border-color:var(--mgr-main);background:var(--mgr-main)}
+.role-mgr .field-input:focus{border-color:var(--mgr-main);box-shadow:0 0 0 3px var(--mgr-lt)}
+.role-mgr .link-btn{color:var(--mgr-main)}
+
+.role-mbr .logo-icon{background:var(--mbr-main)}
+.role-mbr .btn-main{background:var(--mbr-main)}
+.role-mbr .check-box.checked{border-color:var(--mbr-main);background:var(--mbr-main)}
+.role-mbr .field-input:focus{border-color:var(--mbr-main);box-shadow:0 0 0 3px var(--mbr-lt)}
+.role-mbr .link-btn{color:var(--mbr-main)}
+
+/* ── 招待バナー ── */
+.invite-banner{
+  background:var(--owner-lt);
+  border:1px solid #b8d8c0;
+  border-radius:var(--radius-sm);
+  padding:11px 14px;
+  display:flex;align-items:flex-start;gap:9px;
+  margin-bottom:18px;
+  font-size:12px;
+}
+.invite-banner-icon{font-size:18px;flex-shrink:0}
+.invite-banner-text{color:var(--ink-2);line-height:1.55}
+.invite-banner-name{font-weight:600;color:var(--ink)}
+
+/* ── パスワード強度 ── */
+.pw-strength{margin-top:5px}
+.pw-bars{display:flex;gap:3px;margin-bottom:3px}
+.pw-bar{
+  flex:1;height:4px;border-radius:2px;
+  background:var(--border);transition:background .2s;
+}
+.pw-bar.active-weak{background:#e24b4a}
+.pw-bar.active-mid {background:#d4a847}
+.pw-bar.active-strong{background:var(--owner-main)}
+.pw-label{font-size:11px;color:var(--ink-3)}
+
+/* ── 完了状態 ── */
+.success-screen{
+  text-align:center;padding:8px 0 4px;
+}
+.success-icon{
+  font-size:52px;margin-bottom:14px;
+  animation:pop .4s cubic-bezier(.4,0,.2,1);
+}
+@keyframes pop{
+  0%{transform:scale(.6);opacity:0}
+  70%{transform:scale(1.1)}
+  100%{transform:scale(1);opacity:1}
+}
+.success-title{font-size:19px;font-weight:700;margin-bottom:6px}
+.success-desc{font-size:13px;color:var(--ink-3);line-height:1.65;margin-bottom:20px}
+
+/* ── ローディング ── */
+.spinner{
+  width:18px;height:18px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.4);
+  border-top-color:#fff;
+  animation:spin .7s linear infinite;
+  flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── フッター ── */
+.page-footer{
+  text-align:center;padding:16px 20px;
+  font-size:12px;color:var(--ink-4);
+  position:relative;z-index:1;
+}
+.page-footer a{color:var(--ink-3);text-decoration:underline;cursor:pointer}
+
+/* ── トースト ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--ink);color:#fff;
+  font-size:13px;padding:10px 20px;border-radius:24px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  white-space:nowrap;pointer-events:none;z-index:999;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── レスポンシブ ── */
+@media(max-width:480px){
+  .card-header{padding:22px 22px 16px}
+  .card-body{padding:20px 22px 24px}
+  .login-card{border-radius:var(--radius)}
+  .wrapper{padding:20px 16px 40px;align-items:flex-start}
+}
+</style>
+<script src="gate.js"></script>
+</head>
+<body>
+
+<!-- 背景装飾 -->
+<div class="bg-deco">
+  <div class="bg-circle bg-c1"></div>
+  <div class="bg-circle bg-c2"></div>
+  <div class="bg-circle bg-c3"></div>
+</div>
+
+<!-- メインラッパー -->
+<div class="wrapper">
+  <div class="login-card role-owner" id="login-card">
+
+    <!-- カードヘッダー -->
+    <div class="card-header">
+      <div class="logo">
+        <div class="logo-icon" id="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        Hoshin
+      </div>
+
+      <!-- ロール切り替えタブ -->
+      <div class="role-tabs">
+        <button class="role-tab active owner" id="tab-owner" onclick="switchRole('owner')">
+          <span class="role-tab-icon">👔</span>経営者
+        </button>
+        <button class="role-tab mgr" id="tab-mgr" onclick="switchRole('mgr')">
+          <span class="role-tab-icon">📋</span>管理職
+        </button>
+        <button class="role-tab mbr" id="tab-mbr" onclick="switchRole('mbr')">
+          <span class="role-tab-icon">🙋</span>一般社員
+        </button>
+      </div>
+      <p class="role-desc" id="role-desc">会社の指針書を作成・管理します</p>
+    </div>
+
+    <!-- フォームエリア -->
+    <div class="card-body">
+
+      <!-- ===== ログイン画面 ===== -->
+      <div class="screen active" id="screen-login">
+
+        <!-- 招待バナー（社員ログイン時のみ表示想定、デモ用に常時表示） -->
+        <div class="invite-banner" id="invite-banner" style="display:none">
+          <span class="invite-banner-icon">📩</span>
+          <div class="invite-banner-text">
+            <span class="invite-banner-name" id="invite-company">株式会社サンプル</span> から招待が届いています。<br>
+            アカウントを作成してチームに参加しましょう。
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="email-login">メールアドレス</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉️</span>
+            <input
+              type="email" id="email-login"
+              class="field-input has-icon"
+              placeholder="例：yamada@sample.co.jp"
+              autocomplete="email"
+            >
+          </div>
+          <div class="field-error" id="email-error">正しいメールアドレスを入力してください</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="pw-login">パスワード</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input
+              type="password" id="pw-login"
+              class="field-input has-icon"
+              placeholder="パスワードを入力"
+              autocomplete="current-password"
+              style="padding-right:44px"
+            >
+            <button class="input-toggle" onclick="togglePw('pw-login','eye-login')" id="eye-login" title="パスワードを表示">👁</button>
+          </div>
+          <div class="field-error" id="pw-error">パスワードが間違っています</div>
+        </div>
+
+        <div class="check-row">
+          <label class="check-label">
+            <div class="check-box" id="remember-check" onclick="toggleCheck('remember-check')"></div>
+            ログイン状態を保持する
+          </label>
+          <button class="forgot-link" onclick="showScreen('screen-forgot')">パスワードを忘れた方</button>
+        </div>
+
+        <button class="btn-main" id="login-btn" onclick="doLogin()">
+          サインインする
+        </button>
+
+        <div class="divider"><span class="divider-text">または</span></div>
+
+        <button class="btn-sub" onclick="doGoogleLogin()">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.33 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.67 14.62 48 24 48z"/></svg>
+          Googleアカウントでサインイン
+        </button>
+
+        <div class="link-row">
+          アカウントをお持ちでない方は
+          <button class="link-btn" id="to-register" onclick="showScreen('screen-register')">新規登録</button>
+        </div>
+      </div>
+
+      <!-- ===== 新規登録画面 ===== -->
+      <div class="screen" id="screen-register">
+        <div class="field">
+          <label class="field-label" for="reg-name">お名前</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="reg-name" class="field-input has-icon" placeholder="例：山田 花子" autocomplete="name">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="reg-email">メールアドレス</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉️</span>
+            <input type="email" id="reg-email" class="field-input has-icon" placeholder="例：yamada@sample.co.jp" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="field" id="company-field">
+          <label class="field-label" for="reg-company">会社名</label>
+          <div class="input-wrap">
+            <span class="input-icon">🏢</span>
+            <input type="text" id="reg-company" class="field-input has-icon" placeholder="例：株式会社サンプル">
+          </div>
+          <div class="field-hint">経営者のみ入力が必要です。管理職・社員は招待コードで登録してください。</div>
+        </div>
+        <div class="field" id="invite-code-field" style="display:none">
+          <label class="field-label" for="reg-invite">招待コード <span class="req">*</span></label>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="text" id="reg-invite" class="field-input has-icon" placeholder="例：HSN-2024-ABCD（招待メールに記載）">
+          </div>
+          <div class="field-hint">招待メールに記載されているコードを入力してください。</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="reg-pw">パスワード</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input
+              type="password" id="reg-pw"
+              class="field-input has-icon"
+              placeholder="8文字以上で設定してください"
+              autocomplete="new-password"
+              style="padding-right:44px"
+              oninput="checkPwStrength(this.value)"
+            >
+            <button class="input-toggle" onclick="togglePw('reg-pw','eye-reg')" id="eye-reg" title="パスワードを表示">👁</button>
+          </div>
+          <div class="pw-strength" id="pw-strength">
+            <div class="pw-bars">
+              <div class="pw-bar" id="pwb1"></div>
+              <div class="pw-bar" id="pwb2"></div>
+              <div class="pw-bar" id="pwb3"></div>
+              <div class="pw-bar" id="pwb4"></div>
+            </div>
+            <div class="pw-label" id="pw-label">パスワードを入力してください</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px">
+          <label class="check-label" style="font-size:12px;color:var(--ink-3)">
+            <div class="check-box" id="terms-check" onclick="toggleCheck('terms-check')"></div>
+            <span>
+              <button class="forgot-link" onclick="showToast('利用規約を表示します')">利用規約</button> および
+              <button class="forgot-link" onclick="showToast('プライバシーポリシーを表示します')">プライバシーポリシー</button> に同意します
+            </span>
+          </label>
+        </div>
+
+        <button class="btn-main" onclick="doRegister()">アカウントを作成する</button>
+
+        <div class="link-row">
+          すでにアカウントをお持ちの方は
+          <button class="link-btn" onclick="showScreen('screen-login')">サインイン</button>
+        </div>
+      </div>
+
+      <!-- ===== パスワードリセット画面 ===== -->
+      <div class="screen" id="screen-forgot">
+        <div style="margin-bottom:18px">
+          <p style="font-size:15px;font-weight:600;margin-bottom:5px">パスワードを再設定します</p>
+          <p style="font-size:12px;color:var(--ink-3);line-height:1.6">登録したメールアドレスを入力してください。再設定用のリンクをお送りします。</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="forgot-email">メールアドレス</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉️</span>
+            <input type="email" id="forgot-email" class="field-input has-icon" placeholder="例：yamada@sample.co.jp" autocomplete="email">
+          </div>
+        </div>
+
+        <button class="btn-main" onclick="doForgot()">再設定メールを送る</button>
+
+        <div class="link-row">
+          <button class="link-btn" onclick="showScreen('screen-login')">← サインイン画面に戻る</button>
+        </div>
+      </div>
+
+      <!-- ===== リセット完了画面 ===== -->
+      <div class="screen" id="screen-forgot-done">
+        <div class="success-screen">
+          <div class="success-icon">📬</div>
+          <div class="success-title">メールを送りました</div>
+          <div class="success-desc">
+            入力したメールアドレスに<br>
+            パスワード再設定のリンクを送りました。<br>
+            メールが届かない場合は迷惑メールフォルダをご確認ください。
+          </div>
+          <button class="btn-main" onclick="showScreen('screen-login')">サインイン画面に戻る</button>
+        </div>
+      </div>
+
+      <!-- ===== 登録完了画面 ===== -->
+      <div class="screen" id="screen-register-done">
+        <div class="success-screen">
+          <div class="success-icon" id="success-icon">🎉</div>
+          <div class="success-title" id="success-title">アカウントを作成しました</div>
+          <div class="success-desc" id="success-desc">
+            ようこそ、Hoshinへ！<br>
+            まず会社の指針書を作成しましょう。<br>
+            15分あれば最初の指針書が完成します。
+          </div>
+          <button class="btn-main" id="success-btn" onclick="showToast('ホーム画面へ移動します 🚀')">
+            ホームへ進む
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== ローディング画面 ===== -->
+      <div class="screen" id="screen-loading">
+        <div style="text-align:center;padding:32px 0">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background:var(--owner-lt);margin-bottom:16px" id="loading-ring">
+            <div style="width:28px;height:28px;border-radius:50%;border:3px solid rgba(45,90,61,.2);border-top-color:var(--owner-main);animation:spin .7s linear infinite"></div>
+          </div>
+          <p style="font-size:14px;font-weight:500;color:var(--ink-2)" id="loading-msg">サインインしています...</p>
+          <p style="font-size:12px;color:var(--ink-4);margin-top:4px">少しお待ちください</p>
+        </div>
+      </div>
+
+    </div><!-- /card-body -->
+  </div><!-- /login-card -->
+</div><!-- /wrapper -->
+
+<!-- フッター -->
+<footer class="page-footer">
+  <a onclick="showToast('ヘルプページへ移動します')">ヘルプ</a> ·
+  <a onclick="showToast('利用規約ページへ移動します')">利用規約</a> ·
+  <a onclick="showToast('プライバシーポリシーへ移動します')">プライバシーポリシー</a>
+  <br style="margin-bottom:4px">
+  © 2024 Hoshin Inc.
+  <br style="margin-bottom:6px">
+  <a onclick="resetDemoData()" style="font-size:11px">🔄 テストデータをリセット（最初から試す）</a>
+</footer>
+
+<script>
+// ホスト配布時：テスターが最初から試せるよう、このブラウザに保存された
+// 入力（指針書の下書き・公開内容・日報・目標）をすべて消して初期状態に戻す。
+// データはこのブラウザのlocalStorageにのみ保存されており、サーバーには送信されない。
+function resetDemoData() {
+  if (!confirm('このブラウザに保存された指針書・日報・目標などの入力をすべて消して、最初の状態に戻します。よろしいですか？')) return;
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('hoshin_v8:') === 0) keys.push(k);
+    }
+    keys.forEach(k => localStorage.removeItem(k));
+    showToast('テストデータをリセットしました。最初から試せます。');
+  } catch (e) {
+    showToast('リセットできませんでした');
+  }
+}
+</script>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── ロール切り替え ── */
+const roles = {
+  owner: {
+    label:'経営者',
+    desc:'会社の指針書を作成・管理します',
+    colorClass:'role-owner',
+    successDesc:'ようこそ、Hoshinへ！\nまず会社の指針書を作成しましょう。\n15分あれば最初の指針書が完成します。',
+    successIcon:'🎉',
+    showCompany: true,
+  },
+  mgr: {
+    label:'管理職',
+    desc:'部下の日報を確認・フィードバックします',
+    colorClass:'role-mgr',
+    successDesc:'ようこそ！\nホームでチームの状況を確認しましょう。',
+    successIcon:'👋',
+    showCompany: false,
+  },
+  mbr: {
+    label:'一般社員',
+    desc:'日報を書き、自分の成長を記録します',
+    colorClass:'role-mbr',
+    successDesc:'ようこそ！\nまず今日の日報を書いてみましょう。',
+    successIcon:'✨',
+    showCompany: false,
+  }
+};
+
+let currentRole = 'owner';
+
+function switchRole(role) {
+  currentRole = role;
+  const r = roles[role];
+  const card = document.getElementById('login-card');
+
+  // タブ
+  ['owner','mgr','mbr'].forEach(k => {
+    const t = document.getElementById('tab-'+k);
+    t.classList.remove('active');
+  });
+  document.getElementById('tab-'+role).classList.add('active');
+
+  // カラークラス
+  card.classList.remove('role-owner','role-mgr','role-mbr');
+  card.classList.add(r.colorClass);
+
+  // 説明文
+  document.getElementById('role-desc').textContent = r.desc;
+
+  // 会社名フィールド（経営者のみ）
+  document.getElementById('company-field').style.display = r.showCompany ? 'block' : 'none';
+  // 招待コードフィールド（管理職・社員のみ）
+  const invEl = document.getElementById('invite-code-field');
+  if (invEl) invEl.style.display = r.showCompany ? 'none' : 'block';
+
+  // 招待バナー
+  document.getElementById('invite-banner').style.display = (role !== 'owner') ? 'flex' : 'none';
+  document.getElementById('invite-company').textContent = role === 'mgr' ? '株式会社サンプル' : '株式会社サンプル';
+
+  showToast(r.label + 'としてサインインします');
+}
+
+/* ── 画面切り替え ── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ── ログイン処理 ── */
+function doLogin() {
+  const email = document.getElementById('email-login').value.trim();
+  const pw    = document.getElementById('pw-login').value;
+
+  // バリデーション
+  let ok = true;
+  if (!email || !email.includes('@')) {
+    document.getElementById('email-error').classList.add('show');
+    ok = false;
+  } else {
+    document.getElementById('email-error').classList.remove('show');
+  }
+  if (!pw || pw.length < 1) {
+    document.getElementById('pw-error').classList.add('show');
+    ok = false;
+  } else {
+    document.getElementById('pw-error').classList.remove('show');
+  }
+  if (!ok) return;
+
+  // ローディング
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<div class="spinner"></div> サインインしています...';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    btn.innerHTML = 'サインインする';
+    btn.disabled = false;
+
+    const destFiles = {
+      owner: '02_owner_home.html',
+      mgr:   '05_manager_home.html',
+      mbr:   '07_member_home.html',
+    };
+    const destLabels = {
+      owner: '経営者ホームへ移動します 👔',
+      mgr:   '管理職ホームへ移動します 📋',
+      mbr:   '社員ホームへ移動します 🙋',
+    };
+    showToast(destLabels[currentRole]);
+    setTimeout(() => { location.href = destFiles[currentRole]; }, 800);
+  }, 1800);
+}
+
+/* ── Googleログイン ── */
+function doGoogleLogin() {
+  showScreen('screen-loading');
+  document.getElementById('loading-msg').textContent = 'Googleアカウントで認証中...';
+  setTimeout(() => {
+    const gFiles = { owner:'02_owner_home.html', mgr:'05_manager_home.html', mbr:'07_member_home.html' };
+    showToast('Googleアカウントでサインインしました ✓');
+    showScreen('screen-register-done');
+    setTimeout(() => { location.href = gFiles[currentRole]; }, 2000);
+    const r = roles[currentRole];
+    document.getElementById('success-icon').textContent = r.successIcon;
+    document.getElementById('success-desc').textContent = r.successDesc;
+  }, 2000);
+}
+
+/* ── 新規登録 ── */
+function doRegister() {
+  const name   = document.getElementById('reg-name').value.trim();
+  const email  = document.getElementById('reg-email').value.trim();
+  const pw     = document.getElementById('reg-pw').value;
+  const terms  = document.getElementById('terms-check').classList.contains('checked');
+
+  if (!name)          { showToast('お名前を入力してください'); return; }
+  if (!email || !email.includes('@')) { showToast('正しいメールアドレスを入力してください'); return; }
+  if (pw.length < 8)  { showToast('パスワードは8文字以上で設定してください'); return; }
+  if (!terms)         { showToast('利用規約への同意が必要です'); return; }
+
+  showScreen('screen-loading');
+  document.getElementById('loading-msg').textContent = 'アカウントを作成しています...';
+
+  setTimeout(() => {
+    showScreen('screen-register-done');
+    const r = roles[currentRole];
+    document.getElementById('success-icon').textContent = r.successIcon;
+    document.getElementById('success-title').textContent = `${name}さん、ようこそ！`;
+    document.getElementById('success-desc').textContent = r.successDesc;
+  }, 2000);
+}
+
+/* ── パスワードリセット ── */
+function doForgot() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email || !email.includes('@')) {
+    showToast('正しいメールアドレスを入力してください');
+    return;
+  }
+  const btn = event.target;
+  btn.innerHTML = '<div class="spinner"></div> 送信中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.innerHTML = '再設定メールを送る';
+    btn.disabled = false;
+    showScreen('screen-forgot-done');
+  }, 1500);
+}
+
+/* ── パスワード表示切り替え ── */
+function togglePw(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const isText = input.type === 'text';
+  input.type = isText ? 'password' : 'text';
+  document.getElementById(btnId).textContent = isText ? '👁' : '🙈';
+}
+
+/* ── チェックボックス ── */
+function toggleCheck(id) {
+  document.getElementById(id).classList.toggle('checked');
+}
+
+/* ── パスワード強度 ── */
+function checkPwStrength(pw) {
+  const bars  = ['pwb1','pwb2','pwb3','pwb4'];
+  const label = document.getElementById('pw-label');
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) || /[0-9]/.test(pw)) score++;
+  if (/[!@#$%^&*]/.test(pw)) score++;
+
+  const cls = score <= 1 ? 'active-weak' : score <= 2 ? 'active-mid' : 'active-strong';
+  const labels = ['','弱い','普通','強い','非常に強い'];
+
+  bars.forEach((b, i) => {
+    const el = document.getElementById(b);
+    el.className = 'pw-bar';
+    if (i < score) el.classList.add(cls);
+  });
+  label.textContent = pw ? (labels[score] || '非常に強い') : 'パスワードを入力してください';
+  label.style.color = score <= 1 ? '#b83232' : score <= 2 ? '#8a6a1a' : 'var(--owner-main)';
+}
+
+/* ── トースト ── */
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+/* ── Enterキー対応 ── */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const active = document.querySelector('.screen.active');
+  if (!active) return;
+  if (active.id === 'screen-login')    doLogin();
+  if (active.id === 'screen-register') doRegister();
+  if (active.id === 'screen-forgot')   doForgot();
+});
+</script>
+</body>
+</html>

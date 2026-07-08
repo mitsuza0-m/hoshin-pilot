@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoshin — 社員ホーム</title>
+<style>
+:root {
+  --ink:#1e1c18;--ink-2:#4a4740;--ink-3:#8a877e;--ink-4:#c4c1b8;
+  --bg:#faf8f4;--surface:#fff;--border:#e8e4da;
+  --amber:#b06a10;--amber-md:#c07812;--amber-lt:#fef3e2;--amber-btn:#9a5c0a;
+  --green:#2d5a3d;--green-md:#4a8c60;--green-lt:#e8f1eb;
+  --red:#b83232;--red-lt:#fdeaea;
+  --purple:#3d3591;--purple-lt:#eeedfe;
+  --gold:#8a6a1a;--gold-lt:#fdf6e3;
+  --teal:#0e5c46;--teal-lt:#e4f3ed;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 4px rgba(0,0,0,.07);
+  --shadow-md:0 3px 10px rgba(0,0,0,.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;min-height:100vh;padding-bottom:72px}
+
+/* ── ナビ ── */
+.nav{background:var(--amber-md);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.nav-inner{max-width:720px;margin:0 auto;padding:0 16px;height:52px;display:flex;align-items:center;gap:6px}
+.nav-logo{font-size:17px;font-weight:800;color:#fff;letter-spacing:-.02em;display:flex;align-items:center;gap:7px;margin-right:10px}
+.nav-logo svg{width:19px;height:19px}
+.nav-link{padding:5px 10px;border-radius:var(--radius-sm);font-size:12px;color:rgba(255,255,255,.72);cursor:pointer;transition:background .15s;white-space:nowrap}
+.nav-link:hover{background:rgba(255,255,255,.14)}
+.nav-link.active{background:rgba(255,255,255,.2);color:#fff;font-weight:500}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.nav-bell{position:relative;cursor:pointer;color:rgba(255,255,255,.75);font-size:19px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:background .15s}
+.nav-bell:hover{background:rgba(255,255,255,.14)}
+.bell-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--amber-md)}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.22);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+/* ── ページ ── */
+.page{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+
+/* ── あいさつ ── */
+.greeting{margin-bottom:18px}
+.greeting-name{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:3px}
+.greeting-sub{font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.greeting-badge{display:inline-flex;align-items:center;gap:4px;background:var(--amber-lt);color:var(--amber);font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px}
+
+/* ── メインCTA ── */
+.main-cta{background:var(--amber-md);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;transition:background .15s;margin-bottom:14px;box-shadow:var(--shadow-md);border:none;width:100%;text-align:left}
+.main-cta:hover{background:var(--amber-btn)}
+.main-cta-text h2{font-size:16px;font-weight:700;color:#fff;margin-bottom:3px}
+.main-cta-text p{font-size:12px;color:rgba(255,255,255,.72)}
+.cta-arrow{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0;transition:background .15s}
+.main-cta:hover .cta-arrow{background:rgba(255,255,255,.25)}
+
+/* ── コメント通知 ── */
+.comment-card{background:var(--green-lt);border:1px solid #b4d8c0;border-radius:var(--radius);padding:13px 15px;margin-bottom:14px;cursor:pointer;transition:opacity .15s}
+.comment-card:hover{opacity:.9}
+.comment-top{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.comment-label{font-size:12px;font-weight:600;color:var(--green);display:flex;align-items:center;gap:5px}
+.comment-dot{width:7px;height:7px;background:var(--green-md);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.comment-text{font-size:13px;color:var(--ink-2);line-height:1.65}
+.comment-from{font-size:11px;color:var(--green);margin-top:4px}
+
+/* ── 要注意アラート（ストレスチェック） ── */
+.self-alert{display:flex;align-items:center;gap:12px;background:var(--red-lt);border:1.5px solid #e5aaaa;border-radius:var(--radius);padding:13px 15px;margin-bottom:14px;cursor:pointer;transition:opacity .15s}
+.self-alert:hover{opacity:.92}
+.self-alert-icon{font-size:22px;flex-shrink:0}
+.self-alert-body{flex:1;min-width:0}
+.self-alert-title{font-size:13px;font-weight:600;color:var(--red);margin-bottom:3px}
+.self-alert-desc{font-size:12px;color:#8a3232;line-height:1.6}
+.self-alert-btn{font-size:12px;font-weight:500;padding:7px 14px;border-radius:20px;border:1.5px solid var(--red);color:var(--red);background:none;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit}
+.self-alert-btn:hover{background:#f7d4d4}
+@media (max-width:600px){
+  .self-alert{flex-wrap:wrap}
+  .self-alert-btn{margin-left:34px}
+}
+
+/* ── カード ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.card-head{padding:13px 15px 0;display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:7px}
+.card-link{font-size:12px;color:var(--amber);cursor:pointer}
+.card-link:hover{text-decoration:underline}
+.card-body{padding:10px 15px 15px}
+
+/* ── KPIカード ── */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);cursor:pointer;transition:border-color .15s}
+.kpi-card:hover{border-color:var(--amber)}
+.kpi-label{font-size:11px;color:var(--ink-3);margin-bottom:5px;line-height:1.3}
+.kpi-val{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1;margin-bottom:4px}
+.kpi-sub{font-size:10px;color:var(--ink-3)}
+.kpi-up{color:var(--green-md)}
+
+/* ── タスク ── */
+.task-item{display:flex;align-items:center;gap:9px;padding:8px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.task-item:last-child{border-bottom:none}
+.task-item:hover{background:var(--bg)}
+.task-check{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--border);background:var(--surface);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.task-check.done{background:var(--amber-md);border-color:var(--amber-md)}
+.task-check.done::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.task-text{flex:1;font-size:13px;color:var(--ink)}
+.task-text.struck{text-decoration:line-through;color:var(--ink-4)}
+.task-time{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.task-pending{font-size:11px;color:var(--amber);font-weight:500;white-space:nowrap}
+.gcal-pill{display:inline-flex;align-items:center;gap:2px;font-size:10px;background:#e8f0fe;color:#1967d2;padding:1px 6px;border-radius:10px}
+
+/* ── 指針バー ── */
+.policy-row{margin-bottom:9px}
+.policy-row:last-child{margin-bottom:0}
+.policy-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.policy-name{font-size:12px;color:var(--ink-2)}
+.policy-pct{font-size:12px;font-weight:600}
+.bar-wrap{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bar{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.bar-high{background:var(--amber-md)}
+.bar-mid{background:#d4a847}
+.bar-low{background:var(--red)}
+.badge{display:inline-flex;align-items:center;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:500;margin-left:6px}
+.bg{background:var(--green-lt);color:var(--green)}
+.bm{background:var(--gold-lt);color:var(--gold)}
+.br{background:var(--red-lt);color:var(--red);border:1px solid #e5aaaa}
+
+/* ── 偉人の言葉 ── */
+.wisdom-card{background:linear-gradient(135deg,var(--purple-lt),var(--teal-lt));border:1px solid #c8c4f4;border-radius:var(--radius);padding:16px;margin-bottom:14px;text-align:center}
+.wisdom-type{font-size:10px;font-weight:600;color:var(--purple);margin-bottom:6px;letter-spacing:.04em}
+.wisdom-main{font-size:22px;font-weight:700;letter-spacing:.1em;color:var(--purple);margin-bottom:3px}
+.wisdom-reading{font-size:11px;color:var(--purple);opacity:.65;margin-bottom:8px}
+.wisdom-divider{width:32px;height:2px;background:var(--purple);opacity:.3;margin:0 auto 8px;border-radius:2px}
+.wisdom-meaning{font-size:12px;color:var(--purple);line-height:1.75;background:rgba(255,255,255,.6);padding:8px 12px;border-radius:6px;text-align:left;margin-bottom:10px}
+.wisdom-actions{display:flex;justify-content:center;gap:7px}
+.wisdom-btn{display:flex;align-items:center;gap:4px;font-size:11px;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--ink-2);font-family:inherit;transition:background .15s}
+.wisdom-btn:hover{background:var(--bg)}
+
+/* ── 過去の日報 ── */
+.report-item{display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.report-item:last-child{border-bottom:none}
+.report-item:hover{background:var(--bg)}
+.report-date{font-size:14px;font-weight:600;color:var(--amber);min-width:28px;text-align:center}
+.report-date-sub{font-size:10px;color:var(--ink-4);text-align:center}
+.report-body{flex:1;min-width:0}
+.report-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px}
+.r-tag{display:inline-flex;font-size:10px;padding:1px 7px;border-radius:20px;background:var(--amber-lt);color:var(--amber);font-weight:500}
+.report-text{font-size:12px;color:var(--ink-3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.ai-chip{display:inline-flex;align-items:center;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:500;flex-shrink:0}
+.ai-ok{background:var(--green-lt);color:var(--green)}
+.ai-chk{background:var(--gold-lt);color:var(--gold)}
+
+/* ── 目標ミニ ── */
+.goal-item{display:flex;align-items:center;gap:10px;padding:9px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.goal-item:last-child{border-bottom:none}
+.goal-item:hover{background:var(--bg)}
+.goal-name{flex:1;font-size:13px;color:var(--ink)}
+.goal-num{font-size:12px;color:var(--ink-3);white-space:nowrap;flex-shrink:0}
+.goal-num strong{color:var(--ink)}
+.goal-bar-wrap{width:56px;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;flex-shrink:0}
+.goal-bar{height:100%;border-radius:3px}
+.goal-pct{font-size:11px;font-weight:600;min-width:30px;text-align:right;flex-shrink:0}
+
+/* ── フライデーバナー ── */
+.friday-card{background:var(--gold-lt);border:1.5px solid #e8d090;border-radius:var(--radius);padding:13px 15px;margin-bottom:14px;cursor:pointer;transition:opacity .15s}
+.friday-card:hover{opacity:.9}
+.friday-title{font-size:13px;font-weight:600;color:var(--gold);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.friday-desc{font-size:12px;color:#7a5a10;line-height:1.55}
+
+/* ── 通知パネル ── */
+.notif-overlay{display:none;position:fixed;inset:0;background:rgba(20,16,8,.5);z-index:200;justify-content:flex-end}
+.notif-overlay.show{display:flex}
+.notif-panel{background:var(--surface);width:100%;max-width:340px;height:100%;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,.16);padding:0}
+.notif-head{padding:16px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface)}
+.notif-title{font-size:15px;font-weight:700}
+.notif-close{background:none;border:none;font-size:22px;color:var(--ink-3);cursor:pointer;padding:4px;border-radius:6px;transition:background .15s;line-height:1}
+.notif-close:hover{background:var(--bg)}
+.notif-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.notif-item:hover{background:var(--bg)}
+.notif-item.unread{background:#fffbf4}
+.notif-icon-wrap{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ni-green{background:var(--green-lt)}
+.ni-amber{background:var(--amber-lt)}
+.ni-purple{background:var(--purple-lt)}
+.ni-gray{background:var(--bg)}
+.notif-body{flex:1;min-width:0}
+.notif-text{font-size:13px;color:var(--ink);line-height:1.55;margin-bottom:2px}
+.notif-time{font-size:11px;color:var(--ink-4)}
+.unread-dot{width:7px;height:7px;background:var(--amber);border-radius:50%;flex-shrink:0;margin-top:5px}
+
+/* ── モバイルナビ ── */
+.mobile-nav{display:block;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:6px 0 max(6px,env(safe-area-inset-bottom));z-index:100}
+.mobile-nav-inner{display:flex;justify-content:space-around;max-width:720px;margin:0 auto}
+.mnav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 10px;border:none;background:none;cursor:pointer;color:var(--ink-3);font-size:10px;font-family:inherit;border-radius:var(--radius-sm);transition:color .15s}
+.mnav-btn.active{color:var(--amber)}
+.mnav-btn svg{width:22px;height:22px}
+
+/* ── トースト ── */
+.toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;font-size:13px;padding:10px 20px;border-radius:24px;box-shadow:0 4px 16px rgba(0,0,0,.18);transition:transform .3s cubic-bezier(.4,0,.2,1);white-space:nowrap;pointer-events:none;z-index:999}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media(max-width:480px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .kpi-row .kpi-card:last-child{grid-column:1/-1;display:flex;align-items:center;gap:14px}
+  .kpi-row .kpi-card:last-child .kpi-val{font-size:20px}
+}
+</style>
+<script src="gate.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Hoshin
+    </div>
+    <div class="nav-link active">ホーム</div>
+    <div class="nav-link" onclick="location.href='06_member_report.html'">日報を書く</div>
+    <div class="nav-link" onclick="location.href='13_policy_view.html'">指針書</div>
+    <div class="nav-link" onclick="location.href='08_member_growth.html'">成長記録</div>
+    <div class="nav-right">
+      <div class="nav-bell" onclick="openNotif()">🔔<div class="bell-dot"></div></div>
+      <div class="nav-avatar" onclick="location.href='01_login.html'" title="ログアウト / ロール切替">山</div>
+    </div>
+  </div>
+</nav>
+
+<main class="page">
+
+  <!-- 要注意アラート（コンディションが低下した場合に最上部へ表示） -->
+  <div class="self-alert" onclick="toast('コンディションのサポート情報を確認します')">
+    <div class="self-alert-icon">😟</div>
+    <div class="self-alert-body">
+      <div class="self-alert-title">最近の日報でコンディションが「ひと息つきたい」でした</div>
+      <div class="self-alert-desc">無理せず、気になることがあれば田中部長やAIコーチにいつでも相談してくださいね。</div>
+    </div>
+    <button class="self-alert-btn" onclick="event.stopPropagation();toast('AIコーチに相談します')">相談する</button>
+  </div>
+
+  <!-- あいさつ -->
+  <div class="greeting">
+    <div class="greeting-name">おはようございます、山田さん。</div>
+    <div class="greeting-sub">
+      <span>2024年8月9日（金）　営業チーム</span>
+      <span class="greeting-badge">🌟 今週の提出率 100% !</span>
+    </div>
+  </div>
+
+  <!-- 上司からのコメント -->
+  <div class="comment-card" id="latest-comment-card" onclick="openCommentModalFromCard()" style="display:none">
+    <div class="comment-top">
+      <span class="comment-label"><span class="comment-dot"></span>田中部長からコメントが届いています</span>
+    </div>
+    <div class="comment-text" id="latest-comment-text"></div>
+    <div class="comment-from" id="latest-comment-from"></div>
+  </div>
+
+  <!-- 感謝通知（金曜） -->
+  <div class="comment-card" id="home-friday-notif" style="background:#fff4e6;border-color:#f0cc98" onclick="toast('感謝のメッセージを確認します')">
+    <div class="comment-top">
+      <span class="comment-label" style="color:var(--gold)"><span class="comment-dot" style="background:var(--gold)"></span>鈴木さんから感謝が届いています ⭐</span>
+    </div>
+    <div class="comment-text" style="color:var(--ink-2)">「提案書のデザインを手伝ってくれてありがとう。おかげで見やすい資料になりました！」</div>
+    <div class="comment-from" style="color:var(--gold)">今週の感謝メッセージ</div>
+  </div>
+
+  <!-- メインCTA -->
+  <button class="main-cta" id="home-report-btn" onclick="goToReport()">
+    <div class="main-cta-text">
+      <h2>今日の日報を書く</h2>
+      <p>今日はまだ書いていません。5分でできます。</p>
+    </div>
+    <div class="cta-arrow">→</div>
+  </button>
+
+  <!-- KPIカード -->
+  <div class="kpi-row">
+    <div class="kpi-card" onclick="toast('日報提出率の詳細へ')">
+      <div class="kpi-label">今月の提出率</div>
+      <div class="kpi-val" style="color:var(--green)">95%</div>
+      <div class="kpi-sub kpi-up">↑ 継続中！</div>
+    </div>
+    <div class="kpi-card" onclick="toast('成長度の詳細へ')">
+      <div class="kpi-label">成長度</div>
+      <div class="kpi-val">74</div>
+      <div class="kpi-sub kpi-up" style="color:var(--green-md)">先月より +6</div>
+    </div>
+    <div class="kpi-card" onclick="toast('指針理解度の詳細へ')">
+      <div class="kpi-label">指針理解度</div>
+      <div class="kpi-val" id="kpi-penetration">—</div>
+      <div class="kpi-sub" id="kpi-penetration-sub" style="color:var(--ink-4)">日報の指針言及から算出</div>
+    </div>
+  </div>
+
+  <!-- 今日の予定 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">
+        📅 今日の予定
+        <span class="gcal-pill">Googleカレンダー連携中</span>
+      </span>
+      <a class="card-link" onclick="toast('日報入力でタスク確認へ')">日報で記録する</a>
+    </div>
+    <div style="margin-top:10px">
+      <div class="task-item" onclick="toggleTask(this)">
+        <div class="task-check done"></div>
+        <span class="task-text struck">A社 定例ミーティング</span>
+        <span class="task-time">10:00〜11:00</span>
+      </div>
+      <div class="task-item" onclick="toggleTask(this)">
+        <div class="task-check done"></div>
+        <span class="task-text struck">提案書 第2稿の作成</span>
+        <span class="task-time">13:00〜15:00</span>
+      </div>
+      <div class="task-item" onclick="toggleTask(this)">
+        <div class="task-check"></div>
+        <span class="task-text" style="color:var(--amber);font-weight:500">B社 見積もり送付</span>
+        <span class="task-pending">未完了</span>
+      </div>
+      <div class="task-item" onclick="toggleTask(this)">
+        <div class="task-check"></div>
+        <span class="task-text" style="color:var(--amber);font-weight:500">週次売上レポート提出</span>
+        <span class="task-pending">未完了</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 金曜バナー -->
+  <div class="friday-card" id="home-friday-card" onclick="toast('週末の振り返り画面へ')">
+    <div class="friday-title">📆 今日は金曜日です — 1週間お疲れさまでした</div>
+    <div class="friday-desc">週末限定の振り返り項目が日報に追加されています。感謝・称賛・AI返信・偉人の言葉が届きます。</div>
+  </div>
+
+  <!-- 指針が伝わっている度合い -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">📊 自分の指針理解度（今月）</span>
+      <a class="card-link" onclick="toast('成長記録の詳細へ')">詳細を見る</a>
+    </div>
+    <div class="card-body">
+      <div id="penetration-rows"></div>
+      <div class="ai-suggest" id="penetration-hint" style="display:none;align-items:flex-start;gap:8px;background:var(--purple-lt);border:1px solid #c8c4f4;border-radius:6px;padding:9px 12px;font-size:12px;color:var(--purple);margin-top:10px;line-height:1.65">
+        <span style="font-size:15px;flex-shrink:0">✦</span>
+        <span id="penetration-hint-text"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 今週の言葉 -->
+  <div class="wisdom-card" id="wisdom">
+    <div class="wisdom-type">✦ 先週の振り返りからAIが選びました</div>
+    <div class="wisdom-main" id="wisdom-main">一歩一歩</div>
+    <div class="wisdom-reading" id="wisdom-reading">いっぽいっぽ</div>
+    <div class="wisdom-divider"></div>
+    <div class="wisdom-meaning" id="wisdom-meaning">大きな成果も、小さな一歩の積み重ねから生まれる。B社成約は、毎週続けた訪問という「一歩」が実を結んだ証です。来週もその一歩を続けましょう。</div>
+    <div class="wisdom-actions">
+      <button class="wisdom-btn" onclick="rotateWisdom()">🔄 別の言葉</button>
+      <button class="wisdom-btn" onclick="toast('この言葉を保存しました 🔖')">🔖 保存する</button>
+    </div>
+  </div>
+
+  <!-- 自分の目標ミニ -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">🎯 自分の目標の進み</span>
+      <a class="card-link" onclick="toast('目標の詳細へ')">すべて見る</a>
+    </div>
+    <div>
+      <div class="goal-item" onclick="toast('新規商談数の詳細へ')">
+        <div class="goal-name" style="font-size:12px">担当の新規商談数</div>
+        <div class="goal-num" style="font-size:11px"><strong>5</strong> / 月8件</div>
+        <div class="goal-bar-wrap"><div class="goal-bar" style="width:63%;background:#d4a847"></div></div>
+        <div class="goal-pct" style="color:var(--gold)">63%</div>
+      </div>
+      <div class="goal-item" onclick="toast('満足度の詳細へ')">
+        <div class="goal-name" style="font-size:12px">担当顧客の満足度</div>
+        <div class="goal-num" style="font-size:11px"><strong>88点</strong> / 85点</div>
+        <div class="goal-bar-wrap"><div class="goal-bar" style="width:100%;background:var(--green-md)"></div></div>
+        <div class="goal-pct" style="color:var(--green);font-size:10px">達成</div>
+      </div>
+      <div class="goal-item" onclick="toast('指針体現スコアの詳細へ')">
+        <div class="goal-name" style="font-size:12px">指針体現スコア（AI自動）</div>
+        <div class="goal-num" style="font-size:11px"><strong>74pt</strong> / 80pt</div>
+        <div class="goal-bar-wrap"><div class="goal-bar" style="width:74%;background:var(--amber-md)"></div></div>
+        <div class="goal-pct" style="color:var(--amber)">74%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 過去の日報 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">📓 最近の自分の日報</span>
+      <a class="card-link" onclick="toast('全件の日報一覧へ')">全件を見る</a>
+    </div>
+    <div id="recent-reports-list"></div>
+  </div>
+
+</main>
+
+<!-- 通知パネル -->
+<div class="notif-overlay" id="notif-overlay" onclick="closeNotif()">
+  <div class="notif-panel" onclick="event.stopPropagation()">
+    <div class="notif-head">
+      <div class="notif-title">お知らせ</div>
+      <button class="notif-close" onclick="closeNotif()">✕</button>
+    </div>
+    <div class="notif-item unread" onclick="toast('日報の詳細へ')">
+      <div class="notif-icon-wrap ni-green">💬</div>
+      <div class="notif-body">
+        <div class="notif-text">田中部長からコメントが届きました<br><span style="font-size:11px;color:var(--ink-3)">「顧客の言葉をそのままメモするのは素晴らしい...」</span></div>
+        <div class="notif-time">10分前</div>
+      </div>
+      <div class="unread-dot"></div>
+    </div>
+    <div class="notif-item unread" onclick="toast('感謝メッセージを確認')">
+      <div class="notif-icon-wrap ni-amber">💛</div>
+      <div class="notif-body">
+        <div class="notif-text">鈴木さんから感謝が届きました<br><span style="font-size:11px;color:var(--ink-3)">「提案書のデザインを手伝ってくれて...」</span></div>
+        <div class="notif-time">昨日</div>
+      </div>
+      <div class="unread-dot"></div>
+    </div>
+    <div class="notif-item unread" onclick="toast('称賛を確認します')">
+      <div class="notif-icon-wrap ni-amber">⭐</div>
+      <div class="notif-body">
+        <div class="notif-text">田中さんが「今週頑張った人」に選びました<br><span style="font-size:11px;color:var(--ink-3)">「毎日顧客訪問を続けていた...」</span></div>
+        <div class="notif-time">金曜</div>
+      </div>
+      <div class="unread-dot"></div>
+    </div>
+    <div class="notif-item" onclick="toast('指針書を確認します')">
+      <div class="notif-icon-wrap ni-gray">📋</div>
+      <div class="notif-body">
+        <div class="notif-text">指針書が更新されました<br><span style="font-size:11px;color:var(--ink-3)">「07 今年度の目標」が追加されました</span></div>
+        <div class="notif-time">3日前</div>
+      </div>
+    </div>
+    <div class="notif-item" onclick="toast('日報を書く画面へ')">
+      <div class="notif-icon-wrap ni-purple">🕐</div>
+      <div class="notif-body">
+        <div class="notif-text">日報のリマインダー<br><span style="font-size:11px;color:var(--ink-3)">今日の日報をまだ書いていません</span></div>
+        <div class="notif-time">毎日 17:30</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- コメント詳細モーダル -->
+<div id="comment-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,16,8,.55);z-index:200;align-items:center;justify-content:center;padding:16px" onclick="closeCommentModal()">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+    <div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;color:#1e1c18">田中部長からのコメント</div>
+      <button onclick="closeCommentModal()" style="background:none;border:none;font-size:20px;color:#8a877e;cursor:pointer;padding:4px;line-height:1">✕</button>
+    </div>
+    <div style="padding:0 18px 18px">
+      <div style="background:#e8f1eb;border:1px solid #b4d8c0;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:11px;color:#2d5a3d;font-weight:500;margin-bottom:6px" id="cm-target-label"></div>
+        <div style="font-size:14px;color:#1e1c18;line-height:1.75;font-style:italic" id="cm-comment"></div>
+      </div>
+      <div style="background:#f4f2ed;border-radius:8px;padding:10px 12px;margin-bottom:14px">
+        <div style="font-size:11px;color:#8a877e;margin-bottom:5px" id="cm-body-label"></div>
+        <div style="font-size:13px;color:#4a4740;line-height:1.65" id="cm-body"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeCommentModal();toast('ありがとうございます！と返信しました')" style="flex:1;padding:11px;background:#c07812;border:none;color:#fff;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:inherit">🙏 お礼を返す</button>
+        <button onclick="closeCommentModal()" style="flex:0 0 auto;padding:11px 14px;background:#fff;border:1px solid #e8e4da;color:#4a4740;font-size:13px;border-radius:8px;cursor:pointer;font-family:inherit">閉じる</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 自分の日報詳細モーダル -->
+<div id="home-report-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,16,8,.55);z-index:200;align-items:center;justify-content:center;padding:16px" onclick="closeHomeReport()">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+    <div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;color:#1e1c18" id="hr-date">8月8日（木）の日報</div>
+      <button onclick="closeHomeReport()" style="background:none;border:none;font-size:20px;color:#8a877e;cursor:pointer;padding:4px;line-height:1">✕</button>
+    </div>
+    <div style="padding:0 18px 18px">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px" id="hr-tags"></div>
+      <div style="background:#f4f2ed;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+        <div style="font-size:11px;color:#8a877e;margin-bottom:4px">今日やったこと</div>
+        <div style="font-size:13px;color:#4a4740;line-height:1.75" id="hr-body"></div>
+      </div>
+      <div style="background:#f4f2ed;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+        <div style="font-size:11px;color:#8a877e;margin-bottom:4px">気づいたこと・学んだこと</div>
+        <div style="font-size:13px;color:#4a4740;line-height:1.75" id="hr-learning"></div>
+      </div>
+      <div id="hr-comment-wrap" style="background:#e8f1eb;border:1px solid #b4d8c0;border-radius:8px;padding:10px 12px;margin-bottom:12px;display:none">
+        <div style="font-size:11px;color:#2d5a3d;font-weight:500;margin-bottom:4px">上司からのコメント</div>
+        <div style="font-size:13px;color:#1e1c18;font-style:italic" id="hr-comment"></div>
+      </div>
+      <button onclick="closeHomeReport()" style="width:100%;padding:10px;background:#c07812;border:none;color:#fff;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:inherit">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- モバイルナビ -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mnav-btn active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>ホーム
+    </button>
+    <button class="mnav-btn" onclick="location.href='06_member_report.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>日報
+    </button>
+    <button class="mnav-btn" onclick="location.href='13_policy_view.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>指針書
+    </button>
+    <button class="mnav-btn" onclick="location.href='08_member_growth.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>成長記録
+    </button>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="data/store.js"></script>
+<script src="data/team.js"></script>
+<script src="data/reports.js"></script>
+<script>
+const MY_MEMBER_ID = 'yamada';
+const TODAY_REPORT_ID = MY_MEMBER_ID + '_20240809';
+
+// ── 高3: 日報入力への遷移 ──
+// HoshinReports（単一情報源）に本日の日報が保存済みかどうかで、CTAの状態を切り替える。
+function isTodaySubmitted() {
+  return !!HoshinReports.get(TODAY_REPORT_ID);
+}
+function goToReport() {
+  if (isTodaySubmitted()) {
+    openHomeReport(TODAY_REPORT_ID);
+    return;
+  }
+  location.href = '06_member_report.html';
+}
+function updateReportCTA() {
+  const btn = document.getElementById('home-report-btn');
+  if (isTodaySubmitted()) {
+    btn.querySelector('h2').textContent = '今日の日報を確認する';
+    btn.querySelector('p').textContent = '今日の日報を提出済みです ✓';
+    btn.style.background = 'rgba(45,90,61,.5)';
+  } else {
+    btn.querySelector('h2').textContent = '今日の日報を書く';
+    btn.querySelector('p').textContent = '今日はまだ書いていません。5分でできます。';
+    btn.style.background = '';
+  }
+}
+
+// ── 高4: コメント通知モーダル（HoshinReportsの最新コメントを表示） ──
+function openCommentModal(reportId) {
+  const r = HoshinReports.get(reportId);
+  if (!r || !r.commented) return;
+  document.getElementById('cm-target-label').textContent = r.date + 'の日報へのコメント';
+  document.getElementById('cm-comment').textContent = '「' + r.comment + '」';
+  document.getElementById('cm-body-label').textContent = '対象の日報（' + r.date + '）';
+  document.getElementById('cm-body').textContent = r.body || '';
+  document.getElementById('comment-modal-overlay').dataset.reportId = reportId;
+  document.getElementById('comment-modal-overlay').style.display = 'flex';
+}
+function closeCommentModal() {
+  document.getElementById('comment-modal-overlay').style.display = 'none';
+}
+
+// ── 中7: 金曜バナー曜日判定 ──
+// デモ用: true固定（本番は new Date().getDay() === 5 に変更）
+const isHomeFriday = true;
+window.addEventListener('DOMContentLoaded', () => {
+  const fc  = document.getElementById('home-friday-card');
+  const fn  = document.getElementById('home-friday-notif');
+  if (!isHomeFriday) {
+    if (fc) fc.style.display = 'none';
+    if (fn) fn.style.display = 'none';
+  }
+  updateReportCTA();
+  renderMyReports();
+  renderLatestComment();
+  renderPenetration();
+});
+
+// ── 指針理解度（浸透度）を日報の指針タグ集計から描画 ──
+function renderPenetration() {
+  const rows = HoshinReports.tagPenetration([MY_MEMBER_ID]);
+  const container = document.getElementById('penetration-rows');
+  const hint = document.getElementById('penetration-hint');
+  const hintText = document.getElementById('penetration-hint-text');
+  const kpi = document.getElementById('kpi-penetration');
+  const kpiSub = document.getElementById('kpi-penetration-sub');
+
+  if (!rows.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--ink-4);padding:4px 0">日報がまだありません。日報を書くと、指針の浸透度がここに表示されます。</div>';
+    hint.style.display = 'none';
+    kpi.textContent = '—';
+    kpiSub.textContent = 'まだデータがありません';
+    return;
+  }
+
+  const cls = pct => pct >= 80 ? 'bar-high' : (pct >= 50 ? 'bar-mid' : 'bar-low');
+  const badge = pct => pct >= 80
+    ? '<span class="badge bg">良好</span>'
+    : (pct >= 50 ? '<span class="badge bm">普通</span>' : '<span class="badge br">低め</span>');
+
+  container.innerHTML = rows.map(r => {
+    const low = r.pct < 50;
+    return (
+      '<div class="policy-row">' +
+        '<div class="policy-meta">' +
+          '<span class="policy-name"' + (low ? ' style="color:var(--red)"' : '') + '>' + r.tag + ' ' + badge(r.pct) + '</span>' +
+          '<span class="policy-pct"' + (r.pct >= 80 ? ' style="color:var(--green)"' : (low ? ' style="color:var(--red)"' : '')) + '>' + r.pct + '%</span>' +
+        '</div>' +
+        '<div class="bar-wrap"><div class="bar ' + cls(r.pct) + '" style="width:' + r.pct + '%"></div></div>' +
+      '</div>'
+    );
+  }).join('');
+
+  // KPI: 言及された指針の平均浸透度
+  const avg = Math.round(rows.reduce((s, r) => s + r.pct, 0) / rows.length);
+  kpi.textContent = avg;
+  const lowest = rows[rows.length - 1];
+  kpiSub.textContent = lowest.pct < 50 ? '「' + lowest.tag + '」が低め' : '日報の指針言及から算出';
+
+  // AI提案: 最も低い指針を後押し
+  if (lowest.pct < 50) {
+    hint.style.display = 'flex';
+    hintText.textContent = '「' + lowest.tag + '」への言及がまだ少なめです。日報でこの指針を意識して書いてみましょう。';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+// ── UX3: 過去の日報モーダル（HoshinReportsの単一情報源から表示） ──
+function openHomeReport(id) {
+  const r = HoshinReports.get(id);
+  if (!r) return;
+  document.getElementById('hr-date').textContent = r.date + 'の日報';
+  document.getElementById('hr-tags').innerHTML = (r.tag || '').split(' / ').filter(Boolean).map(t =>
+    `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#fef3e2;color:#b06a10;font-weight:500">${t}</span>`
+  ).join('');
+  document.getElementById('hr-body').textContent = r.body || '';
+  document.getElementById('hr-learning').textContent = r.learning || '';
+  const cw = document.getElementById('hr-comment-wrap');
+  const cc = document.getElementById('hr-comment');
+  if (r.commented) {
+    cw.style.display = 'block';
+    cc.textContent = r.comment + '　— 田中部長';
+  } else {
+    cw.style.display = 'none';
+  }
+  document.getElementById('home-report-overlay').style.display = 'flex';
+}
+function closeHomeReport() {
+  document.getElementById('home-report-overlay').style.display = 'none';
+}
+
+// ── 最近の自分の日報一覧・上司からのコメントカードを実データで描画 ──
+function renderMyReports() {
+  const reports = HoshinReports.list([MY_MEMBER_ID]).filter(r => r.id !== TODAY_REPORT_ID || isTodaySubmitted());
+  document.getElementById('recent-reports-list').innerHTML = reports.slice(0, 3).map(r => {
+    const day = r.date.match(/(\d+)日/);
+    const weekday = r.date.match(/（(.)）/);
+    const chipClass = r.ai === 'match' ? 'ai-ok' : 'ai-chk';
+    const chipText = r.ai === 'match' ? '✓ 合致' : '要確認';
+    return (
+      '<div class="report-item" onclick="openHomeReport(\'' + r.id + '\')">' +
+        '<div style="text-align:center;min-width:28px"><div class="report-date">' + (day ? day[1] : '') + '</div><div class="report-date-sub">' + (weekday ? weekday[1] : '') + '</div></div>' +
+        '<div class="report-body">' +
+          '<div class="report-tags">' + (r.tag || '').split(' / ').filter(Boolean).map(t => '<span class="r-tag">' + t + '</span>').join('') + '</div>' +
+          '<div class="report-text">' + r.body + '</div>' +
+        '</div>' +
+        '<span class="ai-chip ' + chipClass + '">' + chipText + '</span>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function renderLatestComment() {
+  const commented = HoshinReports.list([MY_MEMBER_ID]).filter(r => r.commented);
+  const card = document.getElementById('latest-comment-card');
+  if (!commented.length) { card.style.display = 'none'; return; }
+  const latest = commented[0]; // list() は新しい順
+  document.getElementById('latest-comment-text').textContent = '「' + latest.comment + '」';
+  document.getElementById('latest-comment-from').textContent = latest.date + 'の日報へのコメント　→ タップして確認';
+  card.dataset.reportId = latest.id;
+  card.style.display = '';
+}
+function openCommentModalFromCard() {
+  const card = document.getElementById('latest-comment-card');
+  if (card.dataset.reportId) openCommentModal(card.dataset.reportId);
+}
+
+// タスクチェック
+function toggleTask(item) {
+  const chk = item.querySelector('.task-check');
+  const txt = item.querySelector('.task-text');
+  const done = chk.classList.toggle('done');
+  txt.classList.toggle('struck', done);
+  const pending = item.querySelector('.task-pending');
+  if (pending) pending.style.display = done ? 'none' : '';
+  toast(done ? '完了しました ✓' : 'チェックを外しました');
+}
+
+// 偉人の言葉ローテーション
+const wisdoms = [
+  { main:'一歩一歩', reading:'いっぽいっぽ', meaning:'大きな成果も、小さな一歩の積み重ねから生まれる。B社成約は、毎週続けた訪問という「一歩」が実を結んだ証です。' },
+  { main:'七転び八起き', reading:'ななころびやおき', meaning:'何度失敗しても立ち上がること。C社でうまく答えられなかった悔しさを来週の準備に変えましょう。' },
+  { main:'"成功とは情熱を失わない能力だ"', reading:'— チャーチル', meaning:'今週の経験は失敗ではなく成功への過程です。情熱を持って顧客と向き合い続けることが、すでにこの言葉の体現です。' },
+];
+let wi = 0;
+function rotateWisdom() {
+  wi = (wi + 1) % wisdoms.length;
+  document.getElementById('wisdom-main').textContent = wisdoms[wi].main;
+  document.getElementById('wisdom-reading').textContent = wisdoms[wi].reading;
+  document.getElementById('wisdom-meaning').textContent = wisdoms[wi].meaning;
+  toast('別の言葉に変えました');
+}
+
+// 通知パネル
+function openNotif() { document.getElementById('notif-overlay').classList.add('show'); }
+function closeNotif() { document.getElementById('notif-overlay').classList.remove('show'); }
+
+// トースト
+let tt;
+function toast(m) {
+  const e = document.getElementById('toast');
+  e.textContent = m; e.classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => e.classList.remove('show'), 2200);
+}
+
+// バーアニメーション
+window.addEventListener('load', () => {
+  document.querySelectorAll('.bar,.goal-bar').forEach(b => {
+    const w = b.style.width; b.style.width = '0';
+    requestAnimationFrame(() => setTimeout(() => { b.style.width = w; }, 150));
+  });
+});
+</script>
+</body>
+</html>

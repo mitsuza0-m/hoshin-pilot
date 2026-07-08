@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoshin — モック一覧 v9.0</title>
+<style>
+:root{--ink:#1e1c18;--ink-2:#4a4740;--ink-3:#8a877e;--ink-4:#c4c1b8;--bg:#f4f2ed;--surface:#fff;--border:#e2dfd6;--owner:#2d5a3d;--owner-lt:#e4f3ed;--owner-md:#1a8060;--teal:#0e5c46;--teal-lt:#e4f3ed;--amber:#b06a10;--amber-lt:#fef3e2;--amber-md:#c07812;--purple:#3d3591;--purple-lt:#eeedfe;--red:#b83232;--red-lt:#fdeaea;--radius:12px;--shadow:0 2px 8px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.12)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.header{background:var(--owner);padding:44px 20px 36px;text-align:center;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;opacity:.04;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.5) 39px,rgba(255,255,255,.5) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.5) 39px,rgba(255,255,255,.5) 40px)}
+.logo-wrap{display:inline-flex;align-items:center;gap:12px;margin-bottom:16px;position:relative}
+.logo-icon{width:48px;height:48px;background:rgba(255,255,255,.18);border-radius:12px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:26px;height:26px;color:#fff}
+.logo-text{font-size:32px;font-weight:800;color:#fff;letter-spacing:-.03em}
+.header-desc{font-size:15px;color:rgba(255,255,255,.75);margin-bottom:14px;line-height:1.6}
+.header-badges{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.h-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);font-size:12px;padding:5px 13px;border-radius:20px}
+.page{max-width:1000px;margin:0 auto;padding:36px 20px 60px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:36px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;box-shadow:var(--shadow)}
+.stat-val{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1;margin-bottom:4px}
+.stat-label{font-size:11px;color:var(--ink-3)}
+.section{margin-bottom:32px}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid}
+.sh-owner{border-color:var(--owner)}.sh-mgr{border-color:var(--teal)}.sh-mbr{border-color:var(--amber)}.sh-shared{border-color:var(--purple)}
+.section-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.si-owner{background:var(--owner-lt)}.si-mgr{background:var(--teal-lt)}.si-mbr{background:var(--amber-lt)}.si-shared{background:var(--purple-lt)}
+.section-title{font-size:17px;font-weight:700}.section-sub{font-size:12px;color:var(--ink-3);margin-top:1px}
+.st-owner{color:var(--owner)}.st-mgr{color:var(--teal)}.st-mbr{color:var(--amber)}.st-shared{color:var(--purple)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.screen-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;text-decoration:none;display:block;transition:transform .15s,box-shadow .15s,border-color .15s;box-shadow:var(--shadow)}
+.screen-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.screen-card.owner:hover{border-color:var(--owner-md)}.screen-card.mgr:hover{border-color:var(--teal)}.screen-card.mbr:hover{border-color:var(--amber-md)}.screen-card.shared:hover{border-color:var(--purple)}
+.screen-thumb{height:130px;display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;overflow:hidden}
+.th-owner{background:linear-gradient(135deg,#e4f3ed,#c8e8d8)}.th-mgr{background:linear-gradient(135deg,#e4f3ed,#c4dff0)}.th-mbr{background:linear-gradient(135deg,#fef3e2,#fde4b8)}.th-shared{background:linear-gradient(135deg,#eeedfe,#dddcfc)}
+.screen-thumb.has-new::after{content:'NEW';position:absolute;top:8px;right:10px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:#FCEBEB;color:#A32D2D}
+.screen-thumb.thumb-done::after{content:'✓ 完成';position:absolute;top:8px;right:10px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;background:#EAF3DE;color:#3B6D11}
+.screen-info{padding:12px 14px 14px}
+.screen-num{font-size:10px;font-weight:600;color:var(--ink-4);margin-bottom:3px;letter-spacing:.04em}
+.screen-name{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.screen-desc{font-size:11px;color:var(--ink-3);line-height:1.6}
+.feature-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.fc{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--bg);color:var(--ink-3)}
+.fc-new{background:var(--red-lt);color:var(--red);font-weight:500}
+.changelog{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:24px}
+.cl-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.cl-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--ink-2)}
+.cl-item:last-child{border-bottom:none}
+.cl-badge{flex-shrink:0;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px}
+.cb-new{background:var(--red-lt);color:var(--red)}.cb-update{background:var(--amber-lt);color:var(--amber)}
+.dev-guide{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px;margin-top:8px}
+.dg-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.dg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dg-item{background:var(--bg);border-radius:8px;padding:12px 14px}
+.dg-item-title{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+.dg-item-desc{font-size:11px;color:var(--ink-3);line-height:1.65}
+code{background:#e8e4da;padding:1px 5px;border-radius:4px;font-size:11px;font-family:'SF Mono','Fira Code',monospace}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.dg-grid{grid-template-columns:1fr}}
+@media(max-width:460px){.grid{grid-template-columns:1fr}}
+</style>
+<script src="gate.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-wrap">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <div class="logo-text">Hoshin</div>
+  </div>
+  <div class="header-desc">経営指針 × 日報 統合マネジメントシステム<br>インタラクティブモック一覧</div>
+  <div class="header-badges">
+    <span class="h-badge">🗂 v9.0</span>
+    <span class="h-badge">📱 PC / スマホ対応</span>
+    <span class="h-badge">⚡ 全画面インタラクション</span>
+    <span class="h-badge">🤖 AI対話機能実装</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- 統計 -->
+  <div class="stats">
+    <div class="stat"><div class="stat-val" style="color:var(--owner)">12</div><div class="stat-label">完成画面数</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--teal)">3</div><div class="stat-label">ロール種別</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--amber)">PC/SP</div><div class="stat-label">レスポンシブ対応</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--purple)">AI</div><div class="stat-label">対話機能</div></div>
+  </div>
+
+  <!-- 更新履歴 -->
+  <div class="changelog">
+    <div class="cl-title">📋 v9.0 更新内容</div>
+    <div class="cl-item">
+      <span class="cl-badge cb-new">NEW</span>
+      <div><strong>日報一覧・目標管理の3画面を新規作成。</strong>09: 経営者向け日報一覧（全社員分） / 11: 管理職向け日報一覧（自チームのみ） / 12: 管理職向けチーム目標（KGI参照・KPI編集・個人目標編集）。10は06と同構成の管理職向け日報入力。</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-update">UPDATE</span>
+      <div><strong>大規模リファクタリング（データ一元化）。</strong>日報・目標データを <code>data/*.js</code> に単一情報源化し、<code>HoshinStore</code>（localStorage）で全ページ間を同期。09/11の一覧ロジックを <code>shared/report-list.js</code>、06/10の入力フォームを <code>shared/report-form.js</code>、03/12の目標テーブルを <code>shared/goals-ui.js</code> に集約し重複コードを解消。</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-new">NEW</span>
+      <div><strong>指針書エディタ（03）</strong>に⑧方針・⑨戦略セクションを追加し、⑧→⑨のデータ連携を実装。</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-new">NEW</span>
+      <div><strong>ストレスチェック機能</strong>を日報フォーム（06/10）に追加し、管理職・経営者ホームの要注意アラートに連動。</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-update">UPDATE</span>
+      <div><strong>中7件・UX4件を実装。</strong>01: 招待コード欄・ログイン後遷移 / 03: 出力ボタン遷移 / 04: パンくず遷移・履歴複製 / 06: 感謝称賛追加ボタン・金曜判定 / 07: 金曜判定・過去日報モーダル / 08: 日報履歴モーダル・グラフ拡大・サブ指標詳細</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-update">UPDATE</span>
+      <div><strong>優先度「高」5件。</strong>経営者ホーム：アラートCTA・日報モーダル・未コメント一覧・スマホ対応・遷移。社員ホーム：日報CTA・コメントモーダル。日報入力：ステッパースクロール修正。</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-update">UPDATE</span>
+      <div><strong>管理職ホーム（05）</strong>に3つの未実装機能を追加。①自分の日報ボタンが遷移 ②Gカレンダータスクカード ③週末振り返り（金曜限定・管理職専用・AI返信・偉人の言葉）。</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-new">NEW</span>
+      <div><strong>指針書エディタ（03）</strong>のビジョンセクションに <strong>As is / To be</strong> 入力機能を追加。現状整理・ありたい姿・AIコーチ対話・ギャップ分析・まとめの4ステップ構成。</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-new">NEW</span>
+      <div>ビジョンセクションに <strong>AIコーチング対話</strong> を実装。入力内容を読んで自動で深掘り質問を返す。クイックボタン・ギャップ分析・ビジョン文の自動生成に対応。</div>
+    </div>
+    <div class="cl-item">
+      <span class="cl-badge cb-update">UPDATE</span>
+      <div>指針書エディタのビジョンセクションが <strong>4タブ構成</strong>（As is / To be / AI対話 / まとめ）に変更。</div>
+    </div>
+  </div>
+
+  <!-- 共通画面 -->
+  <div class="section">
+    <div class="section-header sh-shared">
+      <div class="section-icon si-shared">🔐</div>
+      <div><div class="section-title st-shared">共通画面</div><div class="section-sub">全ロール共通のログイン・認証フロー</div></div>
+    </div>
+    <div class="grid">
+      <a href="01_login.html" class="screen-card shared">
+        <div class="screen-thumb th-shared thumb-done">🔐</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 01</div>
+          <div class="screen-name">ログイン画面</div>
+          <div class="screen-desc">3ロール切り替え・Google連携・新規登録・パスワードリセット・完了フロー</div>
+          <div class="feature-chips"><span class="fc">ロール切替</span><span class="fc">Google連携</span><span class="fc">バリデーション</span><span class="fc">PW強度</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- 経営者 -->
+  <div class="section">
+    <div class="section-header sh-owner">
+      <div class="section-icon si-owner">👔</div>
+      <div><div class="section-title st-owner">経営者（Owner）</div><div class="section-sub">指針書作成・全社分析・AIレポート・ファイル出力</div></div>
+    </div>
+    <div class="grid">
+      <a href="02_owner_home.html" class="screen-card owner">
+        <div class="screen-thumb th-owner thumb-done">🏠</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 02</div>
+          <div class="screen-name">経営者ホーム</div>
+          <div class="screen-desc">KPI・アラートモーダル・日報詳細モーダル・未コメント一覧・スマホ対応アラート・フッター遷移</div>
+          <div class="feature-chips"><span class="fc">アラート</span><span class="fc">KPI</span><span class="fc">AIサマリー</span><span class="fc">バーアニメ</span></div>
+        </div>
+      </a>
+      <a href="03_policy_editor.html" class="screen-card owner">
+        <div class="screen-thumb th-owner has-new">📋</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 03</div>
+          <div class="screen-name">指針書エディタ</div>
+          <div class="screen-desc">志・理念・ミッション・ビジョン（As is / To be / AI対話）・バリュー・行動指針・目標の7セクション</div>
+          <div class="feature-chips"><span class="fc">ライフライン</span><span class="fc">AI提案</span><span class="fc fc-new">As is / To be NEW</span><span class="fc fc-new">AI対話 NEW</span></div>
+        </div>
+      </a>
+      <a href="04_export.html" class="screen-card owner">
+        <div class="screen-thumb th-owner thumb-done">📄</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 04</div>
+          <div class="screen-name">指針書出力・ダウンロード</div>
+          <div class="screen-desc">会社情報入力・形式選択・テンプレート・セクション選択・生成アニメ・履歴管理</div>
+          <div class="feature-chips"><span class="fc">Word/PDF</span><span class="fc">プレビュー</span><span class="fc">生成アニメ</span><span class="fc">履歴</span></div>
+        </div>
+      </a>
+      <a href="09_owner_reports.html" class="screen-card owner">
+        <div class="screen-thumb th-owner has-new">📊</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 09</div>
+          <div class="screen-name">日報一覧（全社員）</div>
+          <div class="screen-desc">全社員分の日報を横断的に確認。要注意アラートからの日報詳細モーダル・コメント送信</div>
+          <div class="feature-chips"><span class="fc fc-new">全社員 NEW</span><span class="fc">日報モーダル</span><span class="fc">コメント</span></div>
+        </div>
+      </a>
+      <a href="13_policy_view.html" class="screen-card owner">
+        <div class="screen-thumb th-owner has-new">📖</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 13</div>
+          <div class="screen-name">指針書を読む（全社員）</div>
+          <div class="screen-desc">公開された指針書を全社員が閲覧。03で公開した志・理念・行動指針・目標を表示</div>
+          <div class="feature-chips"><span class="fc fc-new">公開先 NEW</span><span class="fc">全ロール閲覧</span><span class="fc">プレビュー</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- 管理職 -->
+  <div class="section">
+    <div class="section-header sh-mgr">
+      <div class="section-icon si-mgr">📋</div>
+      <div><div class="section-title st-mgr">管理職（Manager）</div><div class="section-sub">部下の日報確認・コメント・目標管理・感謝称賛・社員状態分析</div></div>
+    </div>
+    <div class="grid">
+      <a href="05_manager_home.html" class="screen-card mgr">
+        <div class="screen-thumb th-mgr thumb-done">🏠</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 05</div>
+          <div class="screen-name">管理職ホーム</div>
+          <div class="screen-desc">緊急アラート・自分の日報遷移・Gカレンダータスク・メンバー状況・日報フィード・週末振り返り（金曜）・AI返信・偉人の言葉</div>
+          <div class="feature-chips"><span class="fc">緊急アラート</span><span class="fc">コメント送信</span><span class="fc fc-new">Gカレンダー NEW</span><span class="fc fc-new">週末振り返り NEW</span></div>
+        </div>
+      </a>
+      <a href="10_manager_report.html" class="screen-card mgr">
+        <div class="screen-thumb th-mgr has-new">✏️</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 10</div>
+          <div class="screen-name">日報入力（管理職）</div>
+          <div class="screen-desc">06と同じ6ステップ構成を管理職向けに提供。ストレスチェック・共通フォームロジック</div>
+          <div class="feature-chips"><span class="fc fc-new">共通ロジック NEW</span><span class="fc">ストレスチェック</span></div>
+        </div>
+      </a>
+      <a href="11_manager_reports.html" class="screen-card mgr">
+        <div class="screen-thumb th-mgr has-new">📑</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 11</div>
+          <div class="screen-name">部下の日報一覧</div>
+          <div class="screen-desc">自チームメンバーの日報のみ表示。要注意アラート・コメント送信</div>
+          <div class="feature-chips"><span class="fc fc-new">チーム限定 NEW</span><span class="fc">コメント</span></div>
+        </div>
+      </a>
+      <a href="12_manager_goals.html" class="screen-card mgr">
+        <div class="screen-thumb th-mgr has-new">🎯</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 12</div>
+          <div class="screen-name">チームの目標</div>
+          <div class="screen-desc">全社KGIを参照し、チームKPI・個人目標を編集</div>
+          <div class="feature-chips"><span class="fc fc-new">KGI参照 NEW</span><span class="fc fc-new">KPI編集 NEW</span><span class="fc">個人目標</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- 一般社員 -->
+  <div class="section">
+    <div class="section-header sh-mbr">
+      <div class="section-icon si-mbr">🙋</div>
+      <div><div class="section-title st-mbr">一般社員（Member）</div><div class="section-sub">日報入力・週末振り返り・ホーム・成長記録・指針閲覧</div></div>
+    </div>
+    <div class="grid">
+      <a href="07_member_home.html" class="screen-card mbr">
+        <div class="screen-thumb th-mbr thumb-done">🏠</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 07</div>
+          <div class="screen-name">社員ホーム</div>
+          <div class="screen-desc">コメントモーダル・感謝通知・日報入力CTA遷移・タスクチェック・指針バー・偉人の言葉・通知パネル</div>
+          <div class="feature-chips"><span class="fc">タスクチェック</span><span class="fc">通知パネル</span><span class="fc">言葉ローテ</span><span class="fc">金曜バナー</span></div>
+        </div>
+      </a>
+      <a href="06_member_report.html" class="screen-card mbr">
+        <div class="screen-thumb th-mbr thumb-done">✏️</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 06</div>
+          <div class="screen-name">日報入力</div>
+          <div class="screen-desc">6ステップ・Gカレンダー・タスクチェック・指針タグ・感謝称賛・週末振り返り・ステッパースクロール修正</div>
+          <div class="feature-chips"><span class="fc">Gカレンダー</span><span class="fc">指針タグ</span><span class="fc">AI返信</span><span class="fc">完了モーダル</span></div>
+        </div>
+      </a>
+      <a href="08_member_growth.html" class="screen-card mbr">
+        <div class="screen-thumb th-mbr thumb-done">📈</div>
+        <div class="screen-info">
+          <div class="screen-num">SCREEN 08</div>
+          <div class="screen-name">成長記録・分析</div>
+          <div class="screen-desc">成長度・指針理解度リングゲージ・トレンドグラフ・日報履歴・週次振り返りモーダル・AIフィードバック</div>
+          <div class="feature-chips"><span class="fc">リングアニメ</span><span class="fc">4タブ</span><span class="fc">振り返り</span><span class="fc">AIフィードバック</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- 開発ガイド -->
+  <div class="dev-guide">
+    <div class="dg-title">💻 Claude Code での編集ガイド</div>
+    <div class="dg-grid">
+      <div class="dg-item">
+        <div class="dg-item-title">ファイル構成</div>
+        <div class="dg-item-desc">各画面は独立した <code>.html</code> ファイルです。<code>00_index.html</code> がこの一覧です。番号順（01〜12）で画面の流れを把握できます。</div>
+      </div>
+      <div class="dg-item">
+        <div class="dg-item-title">カラー変数の変更</div>
+        <div class="dg-item-desc">各ファイル冒頭の <code>:root { ... }</code> 内のCSS変数を変更すると全体の色が一括変更されます。<code>--owner</code> が経営者系、<code>--amber</code> が社員系の基本色です。</div>
+      </div>
+      <div class="dg-item">
+        <div class="dg-item-title">AI対話ロジックの場所</div>
+        <div class="dg-item-desc"><code>03_policy_editor.html</code> 末尾の <code>&lt;script&gt;</code> に <code>vSendMsg()</code> / <code>vGetResponse()</code> 関数があります。AIのレスポンスパターンを編集して応答をカスタマイズできます。</div>
+      </div>
+      <div class="dg-item">
+        <div class="dg-item-title">データ管理（単一情報源）</div>
+        <div class="dg-item-desc">日報・目標データは <code>data/*.js</code> が唯一の正データです。編集内容は <code>HoshinStore</code>（localStorage、キー接頭辞 <code>hoshin_v8:</code>）に保存され、同じブラウザで開いた他ページにも反映されます。一覧・入力フォーム・目標テーブルの共通ロジックは <code>shared/*.js</code> に分離されています。</div>
+      </div>
+      <div class="dg-item">
+        <div class="dg-item-title">SaaS化への拡張</div>
+        <div class="dg-item-desc">各画面の <code>toast()</code> 関数でページ遷移を示しています。実装時はルーターの <code>navigate()</code> に置き換えることで画面遷移を実装できます。</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
